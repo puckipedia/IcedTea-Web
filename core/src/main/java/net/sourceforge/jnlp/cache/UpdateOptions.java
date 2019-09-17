@@ -6,7 +6,7 @@ import net.adoptopenjdk.icedteaweb.jnlp.element.update.UpdatePolicy;
 
 public class UpdateOptions {
     // update details from the JNLP file
-    private UpdateCheck updateCheck;
+    final private UpdateCheck updateCheck;
     private UpdatePolicy updatePolicy;
 
     // update policy option values
