@@ -48,6 +48,7 @@ import net.sourceforge.jnlp.runtime.JNLPRuntime;
 import net.sourceforge.jnlp.util.LocaleUtils;
 import net.sourceforge.jnlp.util.LocaleUtils.Match;
 import net.sourceforge.jnlp.util.UrlUtils;
+import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,6 +66,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.HTTP_AGENT;
 import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.OS_ARCH;
 import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.OS_NAME;
 import static net.adoptopenjdk.icedteaweb.StringUtils.hasPrefixMatch;
@@ -284,16 +286,25 @@ public class JNLPFile {
      * @throws ParseException if the JNLP file was invalid
      */
     protected JNLPFile(final URL location, final VersionString version, final ParserSettings settings, final UpdatePolicy policy, final UpdateOptions updateOptions, final URL forceCodebase) throws IOException, ParseException {
-        InputStream input = openURL(location, version, policy, updateOptions);
         this.parserSettings = settings;
-        parse(input, location, forceCodebase);
+        try (InputStream input = openURL(location, version, policy, updateOptions)) {
+            parse(input, location, forceCodebase);
+        }
+
+        final String httpAgent = getResources().getPropertiesMap().get(HTTP_AGENT);
+        if (! StringUtils.isBlank(httpAgent)) {
+            System.setProperty(HTTP_AGENT, httpAgent);
+            if (!HttpURLConnection.userAgent.contains(httpAgent)) {
+                LOG.warn("Cannot set HTTP User-Agent as a connection has been opened before reading the JNLP file");
+            }
+        }
 
         //Downloads the original jnlp file into the cache if possible
         //(i.e. If the jnlp file being launched exist locally, but it
         //originated from a website, then download the one from the website
         //into the cache).
         if (sourceLocation != null && "file".equals(location.getProtocol())) {
-            openURL(sourceLocation, version, policy,updateOptions);
+            openURL(sourceLocation, version, policy, updateOptions);
         }
 
         this.fileLocation = location;
@@ -861,7 +872,7 @@ public class JNLPFile {
             specVersion = parser.getSpecVersion();
             fileVersion = parser.getFileVersion();
             codeBase = parser.getCodeBase();
-            sourceLocation = parser.getFileLocation();
+            sourceLocation = parser.getFileLocation() != null ? parser.getFileLocation() : location;
             infos = parser.getInformationDescs(root);
             parser.checkForInformation();
             update = parser.getUpdate(root);

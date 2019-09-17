@@ -39,16 +39,8 @@ mkdir -p "$BIN_TARGET_DIR"
 mkdir -p "$ICO_TARGET_DIR"
 mkdir -p "$SPLASH_TARGET_DIR"
 
-publishExternalLib "$RHINO_SRC"
-publishExternalLib "$TAGSOUP_SRC"
-publishExternalLib "$MSLINKS_SRC"
-publishInternalLib "$CORE_SRC" "$ITW_TARGET_DIR"
-publishInternalLib "$COMMON_SRC" "$ITW_TARGET_DIR"
-publishInternalLib "$JNLPAPI_SRC" "$ITW_TARGET_DIR"
-publishInternalLib "$XMLPARSER_SRC" "$ITW_TARGET_DIR"
-publishInternalLib "$CLIENTS_SRC" "$ITW_TARGET_DIR"
-publishInternalLib "$JNLPSERVER_SRC" "$ITW_TARGET_DIR"
-
+publishInternalLib "$JAVAWS_SRC" "$ITW_TARGET_DIR" "javaws.jar"
+publishInternalLib "$JAVAWS_SRC_SRC" "$ITW_TARGET_DIR" "javaws-srcs.jar"
 publishInternalLib "$SPLASH_PNG_SRC" "$SPLASH_TARGET_DIR"
 publishInternalLib "$JAVAWS_ICO_SRC" "$ICO_TARGET_DIR"
 publishInternalLib "$MODULARJDK_ARGS_FILE_SRC" "$ETC_TARGET_DIR"
@@ -90,17 +82,49 @@ if [ $ITW_LIBS == "DISTRIBUTION" ] ; then
 fi
 
 mkdir $TARGET_IMAGES
+readonly LINUX_SUFFIX=linux.bin
+readonly WIN_SUFFIX=win.bin
+
+
 EXCLUDE="bin/javaws bin/itweb-settings bin/policyeditor bin/*.exe"
 image portable.bin
 if which $CARGO_RUST ; then
   EXCLUDE="bin/*.sh bin/*.bat"
   if isWindows; then
     EXCLUDE="$EXCLUDE icedtea-web-docs/*/man"
-    image win.bin
+    image $WIN_SUFFIX
   else
-    image linux.bin
+    image $LINUX_SUFFIX
   fi
 else
   echo "intentionally none cargo. Skipping build of native images. Staying on portable shell image one only"
 fi
 
+if isWindows; then
+  if which $CARGO_RUST ; then
+    if [ ! "x$WIXGEN_JAR" = "x" -a  ! "x$WIX_TOOLSET_DIR" = "x" ] ; then
+      splitVersion $VERSION
+	  sed \
+      -e "s|../win-installer|$WIN_INSTALLER_DIR|g" \
+	  -e "s|[@]PACKAGE_VERSION[@]|$PACKAGE_VERSION|g" \
+      -e "s|[@]MAJOR_VERSION[@]|$MAJOR_VERSION|g" \
+      -e "s|[@]MINOR_VERSION[@]|$MINOR_VERSION|g" \
+      -e "s|[@]MICRO_VERSION[@]|$MICRO_VERSION|g" \
+      -e "s/[@]PACKAGE_VERSION[@]/$PACKAGE_VERSION/g" \
+      $WIN_INSTALLER_DIR/installer.json.in > $TARGET_TMP/itw-installer.json
+      "$JRE/bin/java" -jar "$WIXGEN_JAR" "$TARGET_IMAGES/`imageName $WIN_SUFFIX`" -c $TARGET_TMP/itw-installer.json -o $TARGET_TMP/itw-installer.wxs
+      pushd $TARGET_TMP
+        "$WIX_TOOLSET_DIR/candle.exe" /nologo itw-installer.wxs
+        "$WIX_TOOLSET_DIR/light.exe" /nologo -sval -ext WixUIExtension itw-installer.wixobj
+        mv itw-installer.msi $TARGET_IMAGES/`imageName $WIN_SUFFIX`.msi
+      popd
+    else
+      if [ "x$WIXGEN_JAR" = "xnone" -o  "x$WIX_TOOLSET_DIR" = "xnone" ] ; then
+        echo "intentionally no WIX_TOOLSET_DIR or WIXGEN_JAR, skipping msi generation"
+      else
+        echo "no WIX_TOOLSET_DIR or WIXGEN_JAR, skipping msi generation"
+        exit 1
+      fi
+    fi
+  fi
+fi

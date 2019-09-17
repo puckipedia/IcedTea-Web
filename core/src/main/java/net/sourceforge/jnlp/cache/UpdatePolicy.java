@@ -44,6 +44,14 @@ public class UpdatePolicy {
     private final long timeDiff;
 
     /**
+     * Create a new update policy; this policy always updates the
+     * entry unless the shouldUpdate method is overridden.
+     */
+    public UpdatePolicy() {
+        this(-1);
+    }
+
+    /**
      * Create an update policy that only checks a file for being
      * updated if it has not been checked for longer than the
      * specified time.
@@ -59,7 +67,7 @@ public class UpdatePolicy {
      * up-to-date.
      * @param entry entry which should be cared
      */
-    public boolean shouldUpdate(CacheEntry entry) {
+    boolean shouldUpdate(CacheEntry entry) {
         long updated = entry.getLastUpdated();
         long current = System.currentTimeMillis();
 

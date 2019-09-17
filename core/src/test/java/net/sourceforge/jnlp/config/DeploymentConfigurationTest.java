@@ -36,13 +36,12 @@ exception statement from your version.
  */
 package net.sourceforge.jnlp.config;
 
-import net.adoptopenjdk.icedteaweb.BasicFileUtils;
 import net.sourceforge.jnlp.PluginBridgeTest;
 import net.adoptopenjdk.icedteaweb.testing.ServerAccess;
 import net.adoptopenjdk.icedteaweb.testing.ServerLauncher;
 import net.adoptopenjdk.icedteaweb.testing.annotations.Remote;
 import net.sourceforge.jnlp.config.DeploymentConfiguration.ConfigType;
-import net.sourceforge.jnlp.util.FileUtils;
+import net.adoptopenjdk.icedteaweb.io.FileUtils;
 import net.sourceforge.jnlp.util.logging.NoStdOutErrTest;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -113,7 +112,7 @@ public class DeploymentConfigurationTest extends NoStdOutErrTest {
     public void testPersistedComments() throws ConfigurationException, IOException {
         final File f = File.createTempFile("properties", "withComments");
         f.deleteOnExit();
-        BasicFileUtils.saveFile("#commented1=val1\nproperty2=val2\n#commented3=val3\nproperty4=val4", f);
+        FileUtils.saveFileUtf8("#commented1=val1\nproperty2=val2\n#commented3=val3\nproperty4=val4", f);
         DeploymentConfiguration dc = new DeploymentConfiguration(new InfrastructureFileDescriptor() {
 
             @Override
@@ -130,7 +129,7 @@ public class DeploymentConfigurationTest extends NoStdOutErrTest {
 
         dc.save();
 
-        String s = FileUtils.loadFileAsString(f);
+        String s = FileUtils.loadFileAsUtf8String(f);
         Assert.assertTrue(s.contains("#" + ConfigurationConstants.DEPLOYMENT_COMMENT));
         String date = new Date().toString().substring(0, 10); //every propertiews file have header and date by default
         Assert.assertTrue(s.contains("#" + date)); //check day part of date...
@@ -150,7 +149,7 @@ public class DeploymentConfigurationTest extends NoStdOutErrTest {
     public void testEnsurePersistedCommentsDoNotMultiplyHeaderAndDate() throws ConfigurationException, IOException {
         final File f = File.createTempFile("properties", "withComments");
         f.deleteOnExit();
-        BasicFileUtils.saveFile("#commented1=val1\nproperty2=val2\n#commented3=val3\nproperty4=val4", f);
+        FileUtils.saveFileUtf8("#commented1=val1\nproperty2=val2\n#commented3=val3\nproperty4=val4", f);
         DeploymentConfiguration dc = new DeploymentConfiguration(new InfrastructureFileDescriptor() {
 
             @Override
@@ -169,7 +168,7 @@ public class DeploymentConfigurationTest extends NoStdOutErrTest {
 
             dc.save();
 
-            s = FileUtils.loadFileAsString(f);
+            s = FileUtils.loadFileAsUtf8String(f);
             for (int y = 0; x < x; x++) {
                 //ensure salt
                 Assert.assertTrue(s.contains("#id" + y + "id"));
@@ -186,7 +185,7 @@ public class DeploymentConfigurationTest extends NoStdOutErrTest {
             Assert.assertEquals(1, PluginBridgeTest.countOccurrences(s, "val3"));
             Assert.assertEquals(1, PluginBridgeTest.countOccurrences(s, "val4"));
             //insert some salt to check if it really iterates
-            BasicFileUtils.saveFile(s + "\n#id" + x + "id", f);
+            FileUtils.saveFileUtf8(s + "\n#id" + x + "id", f);
         }
         //System.out.println(s);
     }

@@ -44,7 +44,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
-import net.adoptopenjdk.icedteaweb.StreamUtils;
+
+import net.adoptopenjdk.icedteaweb.ProcessUtils;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  *
@@ -53,12 +56,13 @@ import net.adoptopenjdk.icedteaweb.StreamUtils;
  */
 public class ThreadedProcess extends Thread {
 
-    private Process p = null;
     private final List<String> args;
+    private final File dir;
+    private final String[] variables;
+
+    private Process p = null;
     private Integer exitCode;
     private Boolean running;
-    private String[] variables;
-    private File dir;
     Throwable deadlyException = null;
     /*
      * before removing this "useless" variable
@@ -67,6 +71,12 @@ public class ThreadedProcess extends Thread {
     private boolean destroyed = false;
     private ProcessAssassin assassin;
     private InputStream writer;
+
+    public ThreadedProcess(final List<String> args, final File dir, final String[] vars) {
+        this.args = args;
+        this.dir = dir;
+        this.variables = vars;
+    }
 
     public boolean isDestroyed() {
         return destroyed;
@@ -84,27 +94,8 @@ public class ThreadedProcess extends Thread {
         return exitCode;
     }
 
-
-
     public void setWriter(final InputStream writer) {
         this.writer = writer;
-    }
-
-    
-
-
-    private ThreadedProcess(final List<String> args) {
-        this.args = args;
-    }
-
-    private ThreadedProcess(final List<String> args, File dir) {
-        this(args);
-        this.dir = dir;
-    }
-
-     public ThreadedProcess(final List<String> args, final File dir, final String[] vars) {
-        this(args,dir);
-        this.variables = vars;
     }
 
 
@@ -145,8 +136,8 @@ public class ThreadedProcess extends Thread {
                 if (writer != null){
                     final Thread t = new Thread(() -> {
                         try (
-                                final BufferedReader br = new BufferedReader(new InputStreamReader(writer, "utf-8"));
-                                final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream(), "utf-8"))) {
+                                final BufferedReader br = new BufferedReader(new InputStreamReader(writer, UTF_8));
+                                final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream(), UTF_8))) {
                             while (true) {
                                 final String s = br.readLine();
                                 if (s == null) {
@@ -162,7 +153,7 @@ public class ThreadedProcess extends Thread {
                     });
                     t.start();
                 }
-                StreamUtils.waitForSafely(p);
+                ProcessUtils.waitForSafely(p);
                 exitCode = p.exitValue();
                 Thread.sleep(500); //this is giving to fast done processes's e/o readers time to read all. I would like to know better solution :-/
                 while(assassin.isKilling() && !assassin.haveKilled()){

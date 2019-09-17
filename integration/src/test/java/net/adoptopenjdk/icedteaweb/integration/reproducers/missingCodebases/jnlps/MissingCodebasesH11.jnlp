@@ -1,5 +1,4 @@
-/* SplashController.java
-Copyright (C) 2012 Red Hat, Inc.
+<!--
 
 This file is part of IcedTea.
 
@@ -33,16 +32,23 @@ module.  An independent module is a module which is not derived from
 or based on this library.  If you modify this library, you may extend
 this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
-exception statement from your version. */
-package net.adoptopenjdk.icedteaweb.client.parts.splashscreen;
+exception statement from your version.
 
-public interface SplashController {
-
-    public void removeSplash();
-
-    public void replaceSplash(SplashPanel r);
-
-    public int getSplashWidth();
-
-    public int getSplashHeight();
-}
+ -->
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" codebase=".">
+    <information>
+        <title>dot cb</title>
+        <vendor>IcedTea</vendor>
+        <homepage href="http://icedtea.classpath.org/wiki/IcedTea-Web#Testing_IcedTea-Web"/>
+        <description>no cb</description>
+        <offline/>
+    </information>
+    <resources>
+        <j2se version="1.4+"/>
+        <jar href="resources/App-missingCodebases.jar"/>
+    </resources>
+    <application-desc
+            main-class="${MAIN_CLASS}">
+    </application-desc>
+</jnlp>

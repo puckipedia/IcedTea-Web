@@ -29,7 +29,18 @@
         <jacoco-maven-plugin.version>0.8.4</jacoco-maven-plugin.version>
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
         <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
+
+        <skip.javadoc>true</skip.javadoc>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>javaDoc</id>
+            <properties>
+                <skip.javadoc>false</skip.javadoc>
+            </properties>
+        </profile>
+    </profiles>
 
     <modules>
         <module>jnlp-api</module>
@@ -68,6 +79,18 @@
                 <configuration>
                     <shortRevisionLength>8</shortRevisionLength>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
@@ -136,6 +159,7 @@
                                 <goal>jar</goal>
                             </goals>
                             <configuration>
+                                <skip>${skip.javadoc}</skip>
                                 <doclint>none</doclint>
                             </configuration>
                         </execution>
@@ -146,9 +170,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.2</version>
-                    <configuration>
-                        <skip>true</skip>
-                    </configuration>
                 </plugin>
             </plugins>
          </pluginManagement>

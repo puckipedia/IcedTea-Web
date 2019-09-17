@@ -1,9 +1,10 @@
 package net.sourceforge.jnlp.cache;
 
 import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
+import net.adoptopenjdk.icedteaweb.io.IOUtils;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
-import net.sourceforge.jnlp.util.FileUtils;
+import net.adoptopenjdk.icedteaweb.io.FileUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,7 +25,7 @@ import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.JAVA_IO_TMPDIR;
  */
 public class NativeLibraryStorage {
 
-    private final static Logger LOG = LoggerFactory.getLogger(NativeLibraryStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NativeLibraryStorage.class);
 
     private final ResourceTracker tracker;
     private final List<File> nativeSearchDirectories = new ArrayList<>();
@@ -83,7 +84,7 @@ public class NativeLibraryStorage {
         return null;
     }
 
-    public static final String[] NATIVE_LIBRARY_EXTENSIONS = { ".so", ".dylib", ".jnilib", ".framework", ".dll" };
+    static final String[] NATIVE_LIBRARY_EXTENSIONS = { ".so", ".dylib", ".jnilib", ".framework", ".dll" };
 
     /**
      * Search for and enable any native code contained in a JAR by copying the
@@ -127,8 +128,9 @@ public class NativeLibraryStorage {
                     if (!outFile.isFile()) {
                         FileUtils.createRestrictedFile(outFile, true);
                     }
-                    CacheUtil.streamCopy(jarFile.getInputStream(e),
-                            new FileOutputStream(outFile));
+                    try(FileOutputStream out = new FileOutputStream(outFile)) {
+                        IOUtils.copy(jarFile.getInputStream(e), out, 4096);
+                    }
                 }
             }
         } catch (IOException ex) {

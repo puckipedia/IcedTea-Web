@@ -37,74 +37,32 @@ exception statement from your version.
 
 package net.adoptopenjdk.icedteaweb;
 
-import net.adoptopenjdk.icedteaweb.logging.Logger;
-import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
-
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.Objects;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StreamUtils {
 
-    private final static Logger LOG = LoggerFactory.getLogger(StreamUtils.class);
-
-    public static final int DEFAULT_BYTE_SIZE = 1024;
-
-    /**
-     * Closes a stream, without throwing IOException.
-     * In IOException is properly logged and consumed
-     * 
-     * @param stream the stream that will be closed
-     */
-    public static void closeSilently(final Closeable stream) {
-        if (stream != null) {
-            try {
-                stream.close();
-            } catch (final IOException e) {
-                LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-            }
-        }
-    }
-
-    /**
-     * Copy an input stream's contents into an output stream.
-     * @param input input stream
-     * @param output stream where to copy input
-     * @throws java.io.IOException if IO fails
-     */
-    public static void copyStream(final InputStream input, final OutputStream output)
-            throws IOException {
-        Objects.requireNonNull(input);
-        Objects.requireNonNull(input);
-        final byte[] buffer = new byte[DEFAULT_BYTE_SIZE];
-        while (true) {
-            final int bytesRead = input.read(buffer);
-            if (bytesRead == -1) {
-                break;
-            }
-            output.write(buffer, 0, bytesRead);
-        }
-    }
-
-    public static String readStreamAsString(final InputStream stream)  throws IOException {
+    public static String readStreamAsString(final InputStream stream) throws IOException {
         return readStreamAsString(stream, false);
     }
-    
-    public static String readStreamAsString(final InputStream stream, final Charset encoding)  throws IOException {
+
+    public static String readStreamAsString(final InputStream stream, final Charset encoding) throws IOException {
         return readStreamAsString(stream, false, encoding);
     }
-    
+
     public static String readStreamAsString(InputStream stream, boolean includeEndOfLines) throws IOException {
         return readStreamAsString(stream, includeEndOfLines, UTF_8);
     }
-            
+
     public static String readStreamAsString(final InputStream stream, final boolean includeEndOfLines, final Charset encoding) throws IOException {
         final InputStreamReader is = new InputStreamReader(stream, encoding);
         final StringBuilder sb = new StringBuilder();
@@ -115,33 +73,18 @@ public class StreamUtils {
                 break;
             }
             sb.append(read);
-            if (includeEndOfLines){
+            if (includeEndOfLines) {
                 sb.append('\n');
             }
         }
         return sb.toString();
     }
-    
-    /**
-     * This should be workaround for https://en.wikipedia.org/wiki/Spurious_wakeup which real can happen in case of processes.
-     * See http://mail.openjdk.java.net/pipermail/distro-pkg-dev/2015-June/032350.html thread
-     * @param process process to be waited for
-     */
-    public static void waitForSafely(final Process process) {
-        Objects.requireNonNull(process);
-        boolean pTerminated = false;
-        while (!pTerminated) {
-            try {
-                process.waitFor();
-            } catch (final InterruptedException e) {
-                LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-            }
-            try {
-                process.exitValue();
-                pTerminated = true;
-            } catch (final IllegalThreadStateException e) {
-                LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-            }
-        }
+
+    public static <T> Stream<T> loadServiceAsStream(Class<T> serviceInterface) {
+        return toStream(ServiceLoader.load(serviceInterface).iterator());
+    }
+
+    public static <T> Stream<T> toStream(Iterator<T> iterator) {
+        return StreamSupport.stream(((Iterable<T>) (() -> iterator)).spliterator(), false);
     }
 }

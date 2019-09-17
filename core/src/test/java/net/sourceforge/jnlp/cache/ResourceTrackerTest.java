@@ -63,6 +63,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Predicate;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.JAVA_IO_TMPDIR;
@@ -80,66 +81,7 @@ public class ResourceTrackerTest extends NoStdOutErrTest{
 
 
     private static Resource createResource(final String name) throws MalformedURLException {
-        return Resource.createResource(new URL("http://example.com/" + name + ".jar"), VersionString.fromString("1.0"), UpdatePolicy.ALWAYS, new UpdateOptions(UpdateCheck.ALWAYS, true));
-    }
-
-    @Test
-    public void testSelectByStatusOneMatchingResource() throws Exception {
-        Resource resource = createResource("oneMatchingResource");
-        Assert.assertNotNull(resource);
-        resource.setStatusFlag(DOWNLOADING);
-        List<Resource> resources = Arrays.asList(resource);
-        Resource result = ResourceTracker.selectByStatus(resources, DOWNLOADING, ERROR);
-        Assert.assertEquals(resource, result);
-    }
-
-    @Test
-    public void testSelectByStatusNoMatchingResource() throws Exception {
-        Resource resource = createResource("noMatchingResource");
-        Assert.assertNotNull(resource);
-        List<Resource> resources = Arrays.asList(resource);
-        Resource result = ResourceTracker.selectByStatus(resources, DOWNLOADING, ERROR);
-        Assert.assertNull(result);
-    }
-
-    @Test
-    public void testSelectByStatusExcludedResources() throws Exception {
-        Resource resource = createResource("excludedResources");
-        Assert.assertNotNull(resource);
-        resource.setStatusFlag(ERROR);
-        List<Resource> resources = Arrays.asList(resource);
-        Resource result = ResourceTracker.selectByStatus(resources, DOWNLOADING, ERROR);
-        Assert.assertNull(result);
-    }
-
-    @Test
-    public void testSelectByStatusMixedResources() throws Exception {
-        Resource r1 = createResource("mixedResources1");
-        Assert.assertNotNull(r1);
-        r1.setStatusFlag(CONNECTED);
-        r1.setStatusFlag(DOWNLOADING);
-        Resource r2 = createResource("mixedResources2");
-        Assert.assertNotNull(r2);
-        r2.setStatusFlag(CONNECTED);
-        r2.setStatusFlag(DOWNLOADING);
-        r2.setStatusFlag(ERROR);
-        List<Resource> resources = Arrays.asList(r1, r2);
-        Resource result = ResourceTracker.selectByStatus(resources, EnumSet.of(CONNECTED, DOWNLOADING), EnumSet.of(ERROR));
-        Assert.assertEquals(r1, result);
-    }
-
-    @Test
-    public void testSelectByFilterUninitialized() throws Exception {
-        Resource resource = createResource("filterUninitialized");
-        Assert.assertNotNull(resource);
-        List<Resource> resources = Arrays.asList(resource);
-        Resource result = ResourceTracker.selectByFilter(resources, new ResourceTracker.Filter<Resource>() {
-            @Override
-            public boolean test(Resource t) {
-                return !t.isInitialized();
-            }
-        });
-        Assert.assertEquals(resource, result);
+        return Resource.createResource(new URL("http://example.com/" + name + ".jar"), VersionString.fromString("1.0"), null, UpdatePolicy.ALWAYS, new UpdateOptions(UpdateCheck.ALWAYS, true));
     }
 
     @Test

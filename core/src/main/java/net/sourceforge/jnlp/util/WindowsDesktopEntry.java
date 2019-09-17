@@ -17,12 +17,13 @@ package net.sourceforge.jnlp.util;
 
 import mslinks.ShellLink;
 import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
+import net.adoptopenjdk.icedteaweb.LazyLoaded;
+import net.adoptopenjdk.icedteaweb.io.FileUtils;
 import net.adoptopenjdk.icedteaweb.jvm.JvmUtils;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.adoptopenjdk.icedteaweb.ui.swing.dialogresults.AccessWarningPaneComplexReturn;
 import net.sourceforge.jnlp.JNLPFile;
-import net.sourceforge.jnlp.cache.CacheLRUWrapper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +36,7 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.adoptopenjdk.icedteaweb.IcedTeaWebConstants.DOUBLE_QUOTE;
+import static net.sourceforge.jnlp.util.WindowsShortcutManager.getWindowsShortcutsFile;
 
 /**
  * Based on https://github.com/DmitriiShamrikov/mslinks
@@ -44,11 +46,11 @@ public class WindowsDesktopEntry implements GenericDesktopEntry {
     private final static Logger LOG = LoggerFactory.getLogger(WindowsDesktopEntry.class);
 
     private final JNLPFile file;
-    private final String iconLocation;
+    private final LazyLoaded<String> iconLocation;
 
     public WindowsDesktopEntry(JNLPFile file) {
         this.file = file;
-        this.iconLocation = new XDesktopEntry(file).cacheAndGetIconLocation();
+        this.iconLocation = new LazyLoaded<>(() -> new XDesktopEntry(file).cacheAndGetIconLocation());
     }
 
     @Override
@@ -68,8 +70,8 @@ public class WindowsDesktopEntry implements GenericDesktopEntry {
     @Override
     public void createShortcutOnWindowsDesktop() throws IOException {
         ShellLink sl = ShellLink.createLink(getJavaWsBin()).setCMDArgs(quoted(file.getSourceLocation()));
-        if (iconLocation != null) {
-            sl.setIconLocation(iconLocation);
+        if (iconLocation.get() != null) {
+            sl.setIconLocation(iconLocation.get());
         }
         final String path = getDesktopLnkPath();
         sl.saveTo(path);
@@ -117,9 +119,9 @@ public class WindowsDesktopEntry implements GenericDesktopEntry {
         final ShellLink sl = ShellLink.createLink(JavaWsBin).setCMDArgs(quoted(file.getSourceLocation()));
         // setup uninstall shortcut
         final ShellLink ul = ShellLink.createLink(JavaWsBin).setCMDArgs("-Xclearcache " + quoted(file.getFileLocation()));
-        if (iconLocation != null) {
-            sl.setIconLocation(iconLocation);
-            ul.setIconLocation(iconLocation);
+        if (iconLocation.get() != null) {
+            sl.setIconLocation(iconLocation.get());
+            ul.setIconLocation(iconLocation.get());
         }
         final String link = FileUtils.sanitizeFileName(file.getInformation().getTitle() + ".lnk", '-');
         sl.saveTo(path + "/" + link);
@@ -130,12 +132,12 @@ public class WindowsDesktopEntry implements GenericDesktopEntry {
     }
 
     private void manageShortcutList(ManageMode mode, String path) throws IOException {
-        if (!CacheLRUWrapper.getInstance().getWindowsShortcutList().exists()) {
-            CacheLRUWrapper.getInstance().getWindowsShortcutList().createNewFile();
+        if (!getWindowsShortcutsFile().exists()) {
+            getWindowsShortcutsFile().createNewFile();
         }
 
         if (ManageMode.A == mode) {
-            List<String> lines = Files.readAllLines(CacheLRUWrapper.getInstance().getWindowsShortcutList().toPath(), UTF_8);
+            List<String> lines = Files.readAllLines(getWindowsShortcutsFile().toPath(), UTF_8);
             Iterator it = lines.iterator();
             String sItem = "";
             String sPath;
@@ -156,14 +158,11 @@ public class WindowsDesktopEntry implements GenericDesktopEntry {
                 LOG.debug("Adding sCut to list = ", sItem);
                 String scInfo = file.getFileLocation().toString() + ",";
                 scInfo += path + "\r\n";
-                Files.write(CacheLRUWrapper.getInstance().getWindowsShortcutList().toPath(), scInfo.getBytes(), StandardOpenOption.APPEND);
+                Files.write(getWindowsShortcutsFile().toPath(), scInfo.getBytes(), StandardOpenOption.APPEND);
             }
         }
     }
 
-    private String getFavIcon() {
-        return XDesktopEntry.getFavIcon(file);
-    }
 
     @Override
     public void createDesktopShortcuts(AccessWarningPaneComplexReturn.ShortcutResult menu, AccessWarningPaneComplexReturn.ShortcutResult desktop, boolean isSigned) {

@@ -38,6 +38,7 @@ package net.sourceforge.jnlp.runtime;
 import net.adoptopenjdk.icedteaweb.StreamUtils;
 import net.adoptopenjdk.icedteaweb.client.parts.dialogs.security.appletextendedsecurity.AppletSecurityLevel;
 import net.adoptopenjdk.icedteaweb.client.parts.dialogs.security.appletextendedsecurity.AppletStartupSecuritySettings;
+import net.adoptopenjdk.icedteaweb.io.IOUtils;
 import net.adoptopenjdk.icedteaweb.jnlp.element.resource.JARDesc;
 import net.adoptopenjdk.icedteaweb.testing.ServerAccess;
 import net.adoptopenjdk.icedteaweb.testing.ServerLauncher;
@@ -62,13 +63,13 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.adoptopenjdk.icedteaweb.testing.util.FileTestUtils.assertNoFileLeak;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -400,7 +401,7 @@ public class JNLPClassLoaderTest extends NoStdOutErrTest {
 
         final String nativeLib = classLoader.findLibrary(nativeLibName);
 
-        assertNoFileLeak(() -> assertNotNull(nativeLib));
+        assertNotNull(nativeLib);
     }
 
     @Test
@@ -415,12 +416,12 @@ public class JNLPClassLoaderTest extends NoStdOutErrTest {
         File jnlp = new File(dir+"/a/b/up.jnlp");
         jnlp.getParentFile().mkdirs();
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/up.jnlp");
-        String jnlpString = StreamUtils.readStreamAsString(is, Charset.forName("utf-8"));
+        String jnlpString = StreamUtils.readStreamAsString(is, UTF_8);
         is.close();
         jnlpString = jnlpString.replaceAll("8080", ""+port);
         is = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/j1.jar");
-        StreamUtils.copyStream(is, new FileOutputStream(jar));
-        Files.write(jnlp.toPath(),jnlpString.getBytes("utf-8"));
+        IOUtils.copy(is, new FileOutputStream(jar));
+        Files.write(jnlp.toPath(),jnlpString.getBytes(UTF_8));
         ServerLauncher as = ServerAccess.getIndependentInstance(jnlp.getParent(), port);
         boolean verifyBackup = JNLPRuntime.isVerifying();
         boolean trustBackup= JNLPRuntime.isTrustAll();
@@ -464,12 +465,12 @@ public class JNLPClassLoaderTest extends NoStdOutErrTest {
         File jnlp = new File(dir+"/a/b/upEncoded.jnlp");
         jnlp.getParentFile().mkdirs();
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/upEncoded.jnlp");
-        String jnlpString = StreamUtils.readStreamAsString(is, Charset.forName("utf-8"));
+        String jnlpString = StreamUtils.readStreamAsString(is, UTF_8);
         is.close();
         jnlpString = jnlpString.replaceAll("8080", ""+port);
         is = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/j1.jar");
-        StreamUtils.copyStream(is, new FileOutputStream(jar));
-        Files.write(jnlp.toPath(),jnlpString.getBytes("utf-8"));
+        IOUtils.copy(is, new FileOutputStream(jar));
+        Files.write(jnlp.toPath(),jnlpString.getBytes(UTF_8));
         ServerLauncher as = ServerAccess.getIndependentInstance(jnlp.getParent(), port);
         boolean verifyBackup = JNLPRuntime.isVerifying();
         boolean trustBackup= JNLPRuntime.isTrustAll();
@@ -513,8 +514,8 @@ public class JNLPClassLoaderTest extends NoStdOutErrTest {
         InputStream is2 = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/jar03_dotdotN1.jar");
         OutputStream fos1 = new FileOutputStream(jnlp);
         OutputStream fos2 = new FileOutputStream(jar);
-        StreamUtils.copyStream(is1, fos1);
-        StreamUtils.copyStream(is2, fos2);
+        IOUtils.copy(is1, fos1);
+        IOUtils.copy(is2, fos2);
         fos1.flush();;
         fos2.flush();
         fos1.close();
@@ -589,8 +590,8 @@ public class JNLPClassLoaderTest extends NoStdOutErrTest {
         InputStream is2 = this.getClass().getClassLoader().getResourceAsStream("net/sourceforge/jnlp/runtime/jar03_dotdotN1.jar");
         OutputStream fos1 = new FileOutputStream(jnlp);
         OutputStream fos2 = new FileOutputStream(jar);
-        StreamUtils.copyStream(is1, fos1);
-        StreamUtils.copyStream(is2, fos2);
+        IOUtils.copy(is1, fos1);
+        IOUtils.copy(is2, fos2);
         fos1.flush();;
         fos2.flush();
         fos1.close();

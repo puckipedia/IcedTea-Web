@@ -16,10 +16,10 @@
 
 package net.sourceforge.jnlp.util;
 
-import net.adoptopenjdk.icedteaweb.BasicFileUtils;
 import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
-import net.adoptopenjdk.icedteaweb.StreamUtils;
+import net.adoptopenjdk.icedteaweb.ProcessUtils;
 import net.adoptopenjdk.icedteaweb.commandline.CommandLineOptions;
+import net.adoptopenjdk.icedteaweb.io.FileUtils;
 import net.adoptopenjdk.icedteaweb.jnlp.element.information.IconKind;
 import net.adoptopenjdk.icedteaweb.jnlp.element.update.UpdateCheck;
 import net.adoptopenjdk.icedteaweb.jvm.JvmUtils;
@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.adoptopenjdk.icedteaweb.IcedTeaWebConstants.JAVAWS;
 import static net.adoptopenjdk.icedteaweb.JvmPropertyConstants.USER_HOME;
 import static net.adoptopenjdk.icedteaweb.jvm.JvmUtils.getJavaWsBin;
@@ -136,7 +135,7 @@ public class XDesktopEntry implements GenericDesktopEntry {
             try {
                 String content = ((PluginBridge) file).toJnlp(isSigned, info.getShortcutType() == AccessWarningPaneComplexReturn.Shortcut.JNLP_HREF, info.isFixHref());
                 generatedJnlp = getGeneratedJnlpFileName();
-                BasicFileUtils.saveFile(content, generatedJnlp);
+                FileUtils.saveFileUtf8(content, generatedJnlp);
             } catch (Exception ex) {
                 LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, ex);
             }
@@ -301,7 +300,7 @@ public class XDesktopEntry implements GenericDesktopEntry {
         //TODO add itweb-settings tab which allows to remove individual items/icons
         try {
             File f = getLinuxMenuIconFile();
-            BasicFileUtils.saveFile(getContent(true, info, isSigned), f, UTF_8);
+            FileUtils.saveFileUtf8(getContent(true, info, isSigned), f);
             LOG.info("Menu item created: {}", f.getAbsolutePath());
         } catch (FileNotFoundException e) {
             LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
@@ -322,7 +321,7 @@ public class XDesktopEntry implements GenericDesktopEntry {
             }
 
             FileUtils.createRestrictedFile(shortcutFile, true);
-            BasicFileUtils.saveFile(getContent(false, info, isSigned), shortcutFile, UTF_8);
+            FileUtils.saveFileUtf8(getContent(false, info, isSigned), shortcutFile);
 
             /*
              * Install the desktop entry
@@ -335,7 +334,7 @@ public class XDesktopEntry implements GenericDesktopEntry {
             pb.inheritIO();
             Process installer = pb.start();
 
-            StreamUtils.waitForSafely(installer);
+            ProcessUtils.waitForSafely(installer);
 
             if (!shortcutFile.delete()) {
                 throw new IOException("Unable to delete temporary file:" + shortcutFile);
@@ -521,15 +520,6 @@ public class XDesktopEntry implements GenericDesktopEntry {
             LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
         }
         return this.iconLocation;
-    }
-    
-    static String getFavIcon(JNLPFile file) {
-        URL u = getFavIconUrl(file);
-        if (u == null){
-            return null;
-        } else {
-            return u.toString();
-        }
     }
     static List<String> possibleFavIconLocations(String path) {
         while (path.endsWith("/") || path.endsWith("\\")) {

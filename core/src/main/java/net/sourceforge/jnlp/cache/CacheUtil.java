@@ -20,11 +20,12 @@ import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
 import net.adoptopenjdk.icedteaweb.client.parts.downloadindicator.DownloadIndicator;
 import net.adoptopenjdk.icedteaweb.http.CloseableConnection;
 import net.adoptopenjdk.icedteaweb.http.ConnectionFactory;
-import net.adoptopenjdk.icedteaweb.jnlp.version.VersionString;
+import net.adoptopenjdk.icedteaweb.io.FileUtils;
 import net.adoptopenjdk.icedteaweb.jnlp.element.EntryPoint;
 import net.adoptopenjdk.icedteaweb.jnlp.element.application.AppletDesc;
 import net.adoptopenjdk.icedteaweb.jnlp.element.application.ApplicationDesc;
 import net.adoptopenjdk.icedteaweb.jnlp.element.extension.InstallerDesc;
+import net.adoptopenjdk.icedteaweb.jnlp.version.VersionString;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.adoptopenjdk.icedteaweb.os.OsUtil;
@@ -32,17 +33,15 @@ import net.sourceforge.jnlp.config.ConfigurationConstants;
 import net.sourceforge.jnlp.config.PathsAndFiles;
 import net.sourceforge.jnlp.runtime.JNLPClassLoader;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
-import net.sourceforge.jnlp.util.FileUtils;
 import net.sourceforge.jnlp.util.PropertiesFile;
+import net.sourceforge.jnlp.util.WindowsShortcutManager;
 
 import javax.jnlp.DownloadServiceListener;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilePermission;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -57,7 +56,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -170,7 +168,7 @@ public class CacheUtil {
                 cacheDir = cacheDir.getCanonicalFile();
                 // remove windows shortcuts before cache dir is gone
                 if (OsUtil.isWindows()) {
-                    removeWindowsShortcuts("ALL");
+                    WindowsShortcutManager.removeWindowsShortcuts("ALL");
                 }
                 FileUtils.recursiveDelete(cacheDir, cacheDir);
                 cacheDir.mkdir();
@@ -233,7 +231,7 @@ public class CacheUtil {
                     }
                 });
                 if (OsUtil.isWindows()) {
-                    removeWindowsShortcuts(application.toLowerCase());
+                    WindowsShortcutManager.removeWindowsShortcuts(application.toLowerCase());
                 }
                 // clean the cache of entries now marked for deletion
                 cleanCache();
@@ -253,49 +251,6 @@ public class CacheUtil {
             return false;
         }
         return CacheLRUWrapper.getInstance().getCacheDir().getFile().isDirectory();
-    }
-
-    public static void removeWindowsShortcuts(String jnlpApp)
-            throws IOException {
-        LOG.debug("Clearing Windows shortcuts");
-        if (CacheLRUWrapper.getInstance().getWindowsShortcutList().exists()) {
-            List<String> lines = Files.readAllLines(CacheLRUWrapper.getInstance().getWindowsShortcutList().toPath(), UTF_8);
-            Iterator it = lines.iterator();
-            Boolean fDelete;
-            while (it.hasNext()) {
-                String sItem = it.next().toString();
-                String[] sArray = sItem.split(",");
-                String application = sArray[0];
-                String sPath = sArray[1];
-                // if application is codebase then delete files
-                if (application.equalsIgnoreCase(jnlpApp)) {
-                    fDelete = true;
-                    it.remove();
-                } else {
-                    fDelete = false;
-                }
-                if (jnlpApp.equals("ALL")) {
-                    fDelete = true;
-                }
-                if (fDelete) {
-                    LOG.info("Deleting item = {}", sPath);
-                    File scList = new File(sPath);
-                    try {
-                        FileUtils.recursiveDelete(scList, scList);
-                    } catch (Exception e) {
-                        LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-                    }
-                }
-            }
-            if (jnlpApp.equals("ALL")) {
-                //delete shortcut list file
-                Files.deleteIfExists(CacheLRUWrapper.getInstance().getWindowsShortcutList().toPath());
-            } else {
-                //write file after application shortcuts have been removed
-                Files.write(CacheLRUWrapper.getInstance().getWindowsShortcutList().toPath(), lines, UTF_8);
-            }
-        }
-
     }
 
     public static void listCacheIds(String filter, boolean jnlpPath, boolean domain) {
@@ -641,37 +596,6 @@ public class CacheUtil {
     }
 
     /**
-     * Copies from an input stream to an output stream.  On
-     * completion, both streams will be closed.  Streams are
-     * buffered automatically.
-     *
-     * @param is stream to read from
-     * @param os stream to write to
-     * @throws IOException if copy fails
-     */
-    public static void streamCopy(InputStream is, OutputStream os) throws IOException {
-        if (!(is instanceof BufferedInputStream))
-            is = new BufferedInputStream(is);
-
-        if (!(os instanceof BufferedOutputStream))
-            os = new BufferedOutputStream(os);
-
-        try {
-            byte b[] = new byte[4096];
-            while (true) {
-                int c = is.read(b, 0, b.length);
-                if (c == -1)
-                    break;
-
-                os.write(b, 0, c);
-            }
-        } finally {
-            is.close();
-            os.close();
-        }
-    }
-
-    /**
      * Converts a URL into a local path string within the given directory. For
      * example a url with subdirectory /tmp/ will
      * result in a File that is located somewhere within /tmp/
@@ -702,7 +626,7 @@ public class CacheUtil {
             path.append(location.getPort());
             path.append(File.separatorChar);
         }
-        String locationPath = location.getPath().replace('/', File.separatorChar);
+        String locationPath = location.getPath();
         String query = "";
         if (location.getQuery() != null) {
             query = location.getQuery();
@@ -722,7 +646,7 @@ public class CacheUtil {
                 throw new RuntimeException(ex);
             }
         } else {
-            path.append(locationPath);
+            path.append(locationPath.replace('/', File.separatorChar));
             if (location.getQuery() != null && !location.getQuery().trim().isEmpty()) {
                 path.append(".").append(location.getQuery());
             }
