@@ -43,7 +43,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import net.adoptopenjdk.icedteaweb.client.console.JavaConsole;
-import net.sourceforge.jnlp.browser.BrowserAwareProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.browser.BrowserAwareProxySelector;
 import net.sourceforge.jnlp.security.JNLPAuthenticator;
 
 import static net.sourceforge.jnlp.runtime.JNLPRuntime.getConfiguration;

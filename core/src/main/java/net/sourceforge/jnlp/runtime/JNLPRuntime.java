@@ -29,7 +29,7 @@ import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.sourceforge.jnlp.DefaultLaunchHandler;
 import net.sourceforge.jnlp.LaunchHandler;
-import net.sourceforge.jnlp.browser.BrowserAwareProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.browser.BrowserAwareProxySelector;
 import net.sourceforge.jnlp.cache.CacheUtil;
 import net.sourceforge.jnlp.cache.UpdatePolicy;
 import net.sourceforge.jnlp.config.ConfigurationConstants;

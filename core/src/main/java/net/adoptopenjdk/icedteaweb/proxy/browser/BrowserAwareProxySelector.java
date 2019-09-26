@@ -34,13 +34,14 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
 */
-package net.sourceforge.jnlp.browser;
+package net.adoptopenjdk.icedteaweb.proxy.browser;
 
 import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
+import net.adoptopenjdk.icedteaweb.proxy.ProxyUtils;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
-import net.sourceforge.jnlp.runtime.JNLPProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
 import net.sourceforge.jnlp.runtime.PacEvaluator;
 import net.sourceforge.jnlp.runtime.PacEvaluatorFactory;
 
@@ -69,9 +70,10 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
     public static final int BROWSER_PROXY_TYPE_NONE = 0;
     public static final int BROWSER_PROXY_TYPE_MANUAL = 1;
     public static final int BROWSER_PROXY_TYPE_PAC = 2;
-    public static final int BROWSER_PROXY_TYPE_NONE2 = 3;
+
     /** use gconf, WPAD and then env (and possibly others)*/
     public static final int BROWSER_PROXY_TYPE_AUTO = 4;
+
     /** use env variables */
     public static final int BROWSER_PROXY_TYPE_SYSTEM = 5;
 
@@ -90,6 +92,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
 
     private PacEvaluator browserProxyAutoConfig = null;
 
+
     /**
      * Create a new instance of this class, reading configuration from the browser
      */
@@ -102,7 +105,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
             initFromBrowserConfig();
         } catch (IOException e) {
             LOG.error("Unable to use Firefox''s proxy settings. Using \"DIRECT\" as proxy type.", e);
-            browserProxyType = PROXY_TYPE_NONE;
+            browserProxyType = BROWSER_PROXY_TYPE_NONE;
         }
     }
 
@@ -237,7 +240,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
 
         try {
             String proxiesString = browserProxyAutoConfig.getProxies(uri.toURL());
-            proxies.addAll(getProxiesFromPacResult(proxiesString));
+            proxies.addAll(ProxyUtils.getProxiesFromPacResult(proxiesString));
         } catch (MalformedURLException e) {
             LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
             proxies.add(Proxy.NO_PROXY);
@@ -251,7 +254,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      * the browser's preferences file.
      */
     private List<Proxy> getFromBrowserConfiguration(URI uri) {
-        return getFromArguments(uri, browserUseSameProxy, true,
+        return ProxyUtils.getFromArguments(uri, browserUseSameProxy, true,
                 browserHttpsProxyHost, browserHttpsProxyPort,
                 browserHttpProxyHost, browserHttpProxyPort,
                 browserFtpProxyHost, browserFtpProxyPort,

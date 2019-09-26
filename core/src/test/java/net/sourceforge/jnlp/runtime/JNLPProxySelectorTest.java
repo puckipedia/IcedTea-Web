@@ -37,6 +37,7 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.runtime;
 
+import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
 import org.junit.Ignore;

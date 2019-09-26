@@ -37,9 +37,10 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.browser;
 
+import net.adoptopenjdk.icedteaweb.proxy.browser.BrowserAwareProxySelector;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
-import net.sourceforge.jnlp.runtime.JNLPProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
 import org.junit.Before;
 import org.junit.Test;
 
