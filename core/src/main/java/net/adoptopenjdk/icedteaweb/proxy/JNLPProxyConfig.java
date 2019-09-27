@@ -128,16 +128,12 @@ public class JNLPProxyConfig {
      */
     private int getPort(final DeploymentConfiguration config, final String key) {
         Assert.requireNonNull(config, "config");
-        return Optional.ofNullable(config.getProperty(key))
-                .map(v -> {
-                    try {
-                        return Integer.valueOf(v);
-                    } catch (NumberFormatException e) {
-                        LOG.error("Can not parse proxy port", e);
-                        return ProxyConstants.FALLBACK_PROXY_PORT;
-                    }
-                })
-                .orElseThrow(() -> new IllegalStateException("Error while reading proxy port"));
+        try {
+            return Integer.valueOf(config.getProperty(key));
+        } catch (final Exception e) {
+            LOG.error("Can not parse proxy port", e);
+            return ProxyConstants.FALLBACK_PROXY_PORT;
+        }
     }
 
     public PacEvaluator getPacEvaluator() {

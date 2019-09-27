@@ -186,7 +186,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      * </p>
      */
     @Override
-    protected List<Proxy> getFromBrowser(URI uri) {
+    public List<Proxy> getFromBrowser(URI uri) {
         List<Proxy> proxies = new ArrayList<Proxy>();
 
         String optionDescription = null;

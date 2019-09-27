@@ -166,6 +166,21 @@ public class ProxyUtils {
         }
         LOG.warn("Invalid config value for proxy type. Will use " + ProxyType.PROXY_TYPE_UNKNOWN);
         return ProxyType.PROXY_TYPE_UNKNOWN;
+    }
 
+    public static int getConfigValueFromProxyType(final ProxyType type) {
+        if(Objects.equals(type, ProxyType.PROXY_TYPE_NONE)) {
+            return 0;
+        }
+        if(Objects.equals(type, ProxyType.PROXY_TYPE_MANUAL)) {
+            return 1;
+        }
+        if(Objects.equals(type, ProxyType.PROXY_TYPE_AUTO)) {
+            return 2;
+        }
+        if(Objects.equals(type, ProxyType.PROXY_TYPE_BROWSER)) {
+            return 3;
+        }
+        return -1;
     }
 }

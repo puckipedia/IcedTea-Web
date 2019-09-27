@@ -42,7 +42,7 @@ import net.adoptopenjdk.icedteaweb.config.ValidatorFactory;
 import net.adoptopenjdk.icedteaweb.config.validators.SecurityValueValidator;
 import net.adoptopenjdk.icedteaweb.jnlp.element.information.ShortcutDesc;
 import net.adoptopenjdk.icedteaweb.manifest.ManifestAttributesChecker;
-import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.ProxyUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +52,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.adoptopenjdk.icedteaweb.StreamUtils.loadServiceAsStream;
+import static net.adoptopenjdk.icedteaweb.proxy.ProxyType.PROXY_TYPE_BROWSER;
+import static net.adoptopenjdk.icedteaweb.proxy.ProxyType.PROXY_TYPE_UNKNOWN;
 import static net.sourceforge.jnlp.config.PathsAndFiles.CACHE_DIR;
 import static net.sourceforge.jnlp.config.PathsAndFiles.JAVA_POLICY;
 import static net.sourceforge.jnlp.config.PathsAndFiles.LOCKS_DIR;
@@ -249,9 +251,9 @@ public class Defaults {
              */
             Setting.createDefault(
                     ConfigurationConstants.KEY_PROXY_TYPE,
-                    String.valueOf(JNLPProxySelector.PROXY_TYPE_BROWSER),
-                    ValidatorFactory.createRangedIntegerValidator(JNLPProxySelector.PROXY_TYPE_UNKNOWN,
-                            JNLPProxySelector.PROXY_TYPE_BROWSER)
+                    String.valueOf(ProxyUtils.getConfigValueFromProxyType(PROXY_TYPE_BROWSER)),
+                    ValidatorFactory.createRangedIntegerValidator(ProxyUtils.getConfigValueFromProxyType(PROXY_TYPE_UNKNOWN),
+                            ProxyUtils.getConfigValueFromProxyType(PROXY_TYPE_BROWSER))
             ),
             Setting.createDefault(
                     ConfigurationConstants.KEY_PROXY_SAME,

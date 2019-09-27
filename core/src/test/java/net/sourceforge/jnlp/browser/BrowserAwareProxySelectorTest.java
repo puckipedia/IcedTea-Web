@@ -37,10 +37,10 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.browser;
 
+import net.adoptopenjdk.icedteaweb.proxy.ProxyUtils;
 import net.adoptopenjdk.icedteaweb.proxy.browser.BrowserAwareProxySelector;
-import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
-import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
+import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static net.adoptopenjdk.icedteaweb.proxy.ProxyType.PROXY_TYPE_BROWSER;
 import static org.junit.Assert.assertEquals;
 
 public class BrowserAwareProxySelectorTest {
@@ -67,8 +68,7 @@ public class BrowserAwareProxySelectorTest {
             this.browserPrefs = browserPrefs;
         }
 
-        @Override
-        protected Map<String, String> parseBrowserPreferences() throws IOException {
+        public Map<String, String> parseBrowserPreferences() throws IOException {
             return browserPrefs;
         }
     }
@@ -83,9 +83,8 @@ public class BrowserAwareProxySelectorTest {
     @Before
     public void setUp() {
         config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_BROWSER));
-
-        browserPrefs = new HashMap<String, String>();
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(PROXY_TYPE_BROWSER)));
+        browserPrefs = new HashMap<>();
     }
 
     @Test

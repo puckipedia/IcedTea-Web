@@ -38,6 +38,8 @@ exception statement from your version.
 package net.sourceforge.jnlp.runtime;
 
 import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.ProxyType;
+import net.adoptopenjdk.icedteaweb.proxy.ProxyUtils;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
 import org.junit.Ignore;
@@ -67,7 +69,7 @@ public class JNLPProxySelectorTest {
         }
 
         @Override
-        protected List<Proxy> getFromBrowser(URI uri) {
+        public List<Proxy> getFromBrowser(URI uri) {
             return Arrays.asList(BROWSER_PROXY);
         }
     }
@@ -75,7 +77,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testNoProxy() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_NONE));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_NONE)));
 
         JNLPProxySelector selector = new TestProxySelector(config);
         List<Proxy> result = selector.select(new URI("http://example.org/"));
@@ -89,7 +91,7 @@ public class JNLPProxySelectorTest {
         final String LOCALHOST = InetAddress.getLocalHost().getHostName();
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_BYPASS_LOCAL, String.valueOf(true));
 
         List<Proxy> result;
@@ -126,7 +128,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testProxyBypassList() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_BYPASS_LIST, "example.org");
 
         JNLPProxySelector selector = new TestProxySelector(config);
@@ -149,7 +151,7 @@ public class JNLPProxySelectorTest {
         int HTTP_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTP_HOST, HTTP_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTP_PORT, String.valueOf(HTTP_PORT));
 
@@ -166,7 +168,7 @@ public class JNLPProxySelectorTest {
         int HTTPS_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTPS_HOST, HTTPS_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTPS_PORT, String.valueOf(HTTPS_PORT));
 
@@ -183,7 +185,7 @@ public class JNLPProxySelectorTest {
         int FTP_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_FTP_HOST, FTP_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_FTP_PORT, String.valueOf(FTP_PORT));
 
@@ -200,7 +202,7 @@ public class JNLPProxySelectorTest {
         int SOCKS_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_SOCKS4_HOST, SOCKS_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_SOCKS4_PORT, String.valueOf(SOCKS_PORT));
 
@@ -217,7 +219,7 @@ public class JNLPProxySelectorTest {
         int SOCKS_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_SOCKS4_HOST, SOCKS_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_SOCKS4_PORT, String.valueOf(SOCKS_PORT));
 
@@ -231,7 +233,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testManualUnknownProtocolProxy() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
 
         JNLPProxySelector selector = new TestProxySelector(config);
         List<Proxy> result = selector.select(new URI("gopher://example.org/"));
@@ -246,7 +248,7 @@ public class JNLPProxySelectorTest {
         final int HTTP_PORT = 42;
 
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_MANUAL));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_MANUAL)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTP_HOST, HTTP_HOST);
         config.setProperty(ConfigurationConstants.KEY_PROXY_HTTP_PORT, String.valueOf(HTTP_PORT));
         config.setProperty(ConfigurationConstants.KEY_PROXY_SAME, String.valueOf(true));
@@ -263,7 +265,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testBrowserProxy() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_BROWSER));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_BROWSER)));
 
         JNLPProxySelector selector = new TestProxySelector(config);
         List<Proxy> result = selector.select(new URI("http://example.org/"));
@@ -275,7 +277,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testMissingProxyAutoConfigUrl() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_AUTO));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_AUTO)));
 
         JNLPProxySelector selector = new TestProxySelector(config);
         List<Proxy> result = selector.select(new URI("http://example.org/"));
@@ -289,7 +291,7 @@ public class JNLPProxySelectorTest {
     @Test
     public void testProxyAutoConfig() throws URISyntaxException {
         DeploymentConfiguration config = new DeploymentConfiguration();
-        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(JNLPProxySelector.PROXY_TYPE_AUTO));
+        config.setProperty(ConfigurationConstants.KEY_PROXY_TYPE, String.valueOf(ProxyUtils.getConfigValueFromProxyType(ProxyType.PROXY_TYPE_AUTO)));
         config.setProperty(ConfigurationConstants.KEY_PROXY_AUTO_CONFIG_URL, "foobar");
 
         JNLPProxySelector selector = new TestProxySelector(config);
@@ -304,31 +306,31 @@ public class JNLPProxySelectorTest {
     public void testConvertingProxyAutoConfigResultToProxyObject() {
         List<Proxy> result;
 
-        result = JNLPProxySelector.getProxiesFromPacResult("foo bar baz; what is this; dunno");
+        result = ProxyUtils.getProxiesFromPacResult("foo bar baz; what is this; dunno");
         assertEquals(0, result.size());
 
-        result = JNLPProxySelector.getProxiesFromPacResult("DIRECT");
+        result = ProxyUtils.getProxiesFromPacResult("DIRECT");
         assertEquals(1, result.size());
         assertEquals(Proxy.NO_PROXY, result.get(0));
 
-        result = JNLPProxySelector.getProxiesFromPacResult("PROXY foo:42");
+        result = ProxyUtils.getProxiesFromPacResult("PROXY foo:42");
         assertEquals(1, result.size());
         assertEquals(new Proxy(Type.HTTP, new InetSocketAddress("foo", 42)), result.get(0));
 
-        result = JNLPProxySelector.getProxiesFromPacResult("PROXY foo:bar");
+        result = ProxyUtils.getProxiesFromPacResult("PROXY foo:bar");
         assertEquals(0, result.size());
 
-        result = JNLPProxySelector.getProxiesFromPacResult("PROXY foo");
+        result = ProxyUtils.getProxiesFromPacResult("PROXY foo");
         assertEquals(0, result.size());
 
-        result = JNLPProxySelector.getProxiesFromPacResult("SOCKS foo:42");
+        result = ProxyUtils.getProxiesFromPacResult("SOCKS foo:42");
         assertEquals(1, result.size());
         assertEquals(new Proxy(Type.SOCKS,  new InetSocketAddress("foo", 42)), result.get(0));
 
-        result = JNLPProxySelector.getProxiesFromPacResult("SOCKS foo:bar");
+        result = ProxyUtils.getProxiesFromPacResult("SOCKS foo:bar");
         assertEquals(0, result.size());
 
-        result = JNLPProxySelector.getProxiesFromPacResult("SOCKS foo");
+        result = ProxyUtils.getProxiesFromPacResult("SOCKS foo");
         assertEquals(0, result.size());
 
     }

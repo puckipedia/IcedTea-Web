@@ -153,7 +153,5 @@ public abstract class JNLPProxySelector extends ProxySelector {
      * @param uri the uri to get proxies for
      * @return a list of proxies
      */
-    protected abstract List<Proxy> getFromBrowser(URI uri);
-
-
+    public abstract List<Proxy> getFromBrowser(URI uri);
 }
