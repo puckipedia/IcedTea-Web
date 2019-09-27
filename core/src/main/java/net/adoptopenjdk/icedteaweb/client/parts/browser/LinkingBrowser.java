@@ -36,15 +36,16 @@ exception statement from your version.
  */
 package net.adoptopenjdk.icedteaweb.client.parts.browser;
 
-import java.net.Authenticator;
-import java.net.ProxySelector;
-import java.net.URL;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import net.adoptopenjdk.icedteaweb.client.console.JavaConsole;
 import net.adoptopenjdk.icedteaweb.proxy.browser.BrowserAwareProxySelector;
 import net.sourceforge.jnlp.security.JNLPAuthenticator;
+
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import java.net.Authenticator;
+import java.net.ProxySelector;
+import java.net.URL;
 
 import static net.sourceforge.jnlp.runtime.JNLPRuntime.getConfiguration;
 
@@ -90,7 +91,6 @@ public class LinkingBrowser extends JTabbedPane {
         // plug in a custom authenticator and proxy selector
         Authenticator.setDefault(new JNLPAuthenticator());
         BrowserAwareProxySelector proxySelector = new BrowserAwareProxySelector(getConfiguration());
-        proxySelector.initialize();
         ProxySelector.setDefault(proxySelector);
         createFrame(url, socket, JFrame.EXIT_ON_CLOSE);
     }

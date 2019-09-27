@@ -221,8 +221,6 @@ public class BrowserAwareProxySelectorTest {
 
     private static List<Proxy> getProxy(DeploymentConfiguration config, Map<String, String> browserPrefs, URI uri) {
         BrowserAwareProxySelector selector = new TestBrowserAwareProxySelector(config, browserPrefs);
-        selector.initialize();
-
         return selector.getFromBrowser(uri);
     }
 }

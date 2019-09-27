@@ -36,16 +36,17 @@ exception statement from your version.
 */
 package net.adoptopenjdk.icedteaweb.proxy.browser;
 
+import net.adoptopenjdk.icedteaweb.Assert;
 import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
+import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
+import net.adoptopenjdk.icedteaweb.proxy.ProxyConstants;
 import net.adoptopenjdk.icedteaweb.proxy.ProxyUtils;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
-import net.adoptopenjdk.icedteaweb.proxy.JNLPProxySelector;
 import net.sourceforge.jnlp.runtime.PacEvaluator;
 import net.sourceforge.jnlp.runtime.PacEvaluatorFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Proxy;
@@ -55,6 +56,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.AUTOCONFIG_URL_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_FTP_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_FTP_PORT_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_HTTPS_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_HTTPS_PORT_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_HTTP_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_HTTP_PORT_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_SOCKS_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_SOCKS_PORT_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.PROXY_TYPE_NAME;
+import static net.adoptopenjdk.icedteaweb.proxy.browser.FirefoxPreferencesConstants.SHARE_PROXY_SETTINGS_NAME;
 
 /**
  * A ProxySelector which can read proxy settings from a browser's
@@ -68,7 +81,9 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
 
     /* firefox's constants */
     public static final int BROWSER_PROXY_TYPE_NONE = 0;
+
     public static final int BROWSER_PROXY_TYPE_MANUAL = 1;
+
     public static final int BROWSER_PROXY_TYPE_PAC = 2;
 
     /** use gconf, WPAD and then env (and possibly others)*/
@@ -77,8 +92,10 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
     /** use env variables */
     public static final int BROWSER_PROXY_TYPE_SYSTEM = 5;
 
-    private int browserProxyType = BROWSER_PROXY_TYPE_NONE;
+    private int browserProxyType;
+
     private URL browserAutoConfigUrl;
+
     /** Whether the http proxy should be used for http, https, ftp and socket protocols */
     private Boolean browserUseSameProxy;
     private String browserHttpProxyHost;
@@ -98,63 +115,47 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      */
     public BrowserAwareProxySelector(DeploymentConfiguration config) {
         super(config);
-    }
 
-    public void initialize() {
         try {
-            initFromBrowserConfig();
-        } catch (IOException e) {
-            LOG.error("Unable to use Firefox''s proxy settings. Using \"DIRECT\" as proxy type.", e);
+            Map<String, String> prefs = FirefoxPreferencesUtil.getFirefoxPreferences();
+
+            String type = prefs.get(PROXY_TYPE_NAME);
+            if (type != null) {
+                browserProxyType = Integer.valueOf(type);
+            } else {
+                browserProxyType = BROWSER_PROXY_TYPE_AUTO;
+            }
+
+            try {
+                String url = prefs.get(AUTOCONFIG_URL_NAME);
+                if (url != null) {
+                    browserAutoConfigUrl = new URL(url);
+                }
+            } catch (MalformedURLException e) {
+                LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
+            }
+
+            if (browserProxyType == BROWSER_PROXY_TYPE_PAC) {
+                if (browserAutoConfigUrl != null) {
+                    browserProxyAutoConfig = PacEvaluatorFactory.getPacEvaluator(browserAutoConfigUrl);
+                }
+            }
+
+            browserUseSameProxy = Boolean.valueOf(prefs.get(SHARE_PROXY_SETTINGS_NAME));
+
+            browserHttpProxyHost = prefs.get(PROXY_HTTP_NAME);
+            browserHttpProxyPort = stringToPort(prefs.get(PROXY_HTTP_PORT_NAME));
+            browserHttpsProxyHost = prefs.get(PROXY_HTTPS_NAME);
+            browserHttpsProxyPort = stringToPort(prefs.get(PROXY_HTTPS_PORT_NAME));
+            browserFtpProxyHost = prefs.get(PROXY_FTP_NAME);
+            browserFtpProxyPort = stringToPort(prefs.get(PROXY_FTP_PORT_NAME));
+            browserSocks4ProxyHost = prefs.get(PROXY_SOCKS_NAME);
+            browserSocks4ProxyPort = stringToPort(prefs.get(PROXY_SOCKS_PORT_NAME));
+        } catch (final IOException e) {
+            LOG.error("Unable to use Firefox's proxy settings. Using 'DIRECT' as proxy type.", e);
             browserProxyType = BROWSER_PROXY_TYPE_NONE;
+
         }
-    }
-
-    /**
-     * Initialize configuration by reading preferences from the browser (firefox)
-     */
-    private void initFromBrowserConfig() throws IOException {
-
-        Map<String, String> prefs = parseBrowserPreferences();
-
-        String type = prefs.get("network.proxy.type");
-        if (type != null) {
-            browserProxyType = Integer.valueOf(type);
-        } else {
-            browserProxyType = BROWSER_PROXY_TYPE_AUTO;
-        }
-
-        try {
-            String url = prefs.get("network.proxy.autoconfig_url");
-            if (url != null) {
-                browserAutoConfigUrl = new URL(url);
-            }
-        } catch (MalformedURLException e) {
-            LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-        }
-
-        if (browserProxyType == BROWSER_PROXY_TYPE_PAC) {
-            if (browserAutoConfigUrl != null) {
-                browserProxyAutoConfig = PacEvaluatorFactory.getPacEvaluator(browserAutoConfigUrl);
-            }
-        }
-
-        browserUseSameProxy = Boolean.valueOf(prefs.get("network.proxy.share_proxy_settings"));
-
-        browserHttpProxyHost = prefs.get("network.proxy.http");
-        browserHttpProxyPort = stringToPort(prefs.get("network.proxy.http_port"));
-        browserHttpsProxyHost = prefs.get("network.proxy.ssl");
-        browserHttpsProxyPort = stringToPort(prefs.get("network.proxy.ssl_port"));
-        browserFtpProxyHost = prefs.get("network.proxy.ftp");
-        browserFtpProxyPort = stringToPort(prefs.get("network.proxy.ftp_port"));
-        browserSocks4ProxyHost = prefs.get("network.proxy.socks");
-        browserSocks4ProxyPort = stringToPort(prefs.get("network.proxy.socks_port"));
-    }
-
-    Map<String, String> parseBrowserPreferences() throws IOException {
-        File preferencesFile = FirefoxPreferencesFinder.find();
-        FirefoxPreferencesParser parser = new FirefoxPreferencesParser(preferencesFile);
-        parser.parse();
-        return parser.getPreferences();
     }
 
     /**
@@ -164,10 +165,11 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      * @param string the string containing the integer to parse
      * @return the port inside the string, or Integer.MIN_VALUE
      */
-    private int stringToPort(String string) {
+    private int stringToPort(final String string) {
         try {
             return Integer.valueOf(string);
-        } catch (NumberFormatException nfe) {
+        } catch (final NumberFormatException nfe) {
+            //TODO: Does this really makes sense???
             return Integer.MIN_VALUE;
         }
     }
@@ -231,12 +233,13 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      * Get an appropriate proxy for a given URI using a PAC specified in the
      * browser.
      */
-    private List<Proxy> getFromBrowserPAC(URI uri) {
-        if (browserAutoConfigUrl == null || uri.getScheme().equals("socket")) {
+    private List<Proxy> getFromBrowserPAC(final URI uri) {
+        Assert.requireNonNull(uri, "uri");
+        if (browserAutoConfigUrl == null || uri.getScheme().equals(ProxyConstants.SOCKET_SCHEME)) {
             return Arrays.asList(new Proxy[] { Proxy.NO_PROXY });
         }
 
-        List<Proxy> proxies = new ArrayList<Proxy>();
+        List<Proxy> proxies = new ArrayList<>();
 
         try {
             String proxiesString = browserProxyAutoConfig.getProxies(uri.toURL());

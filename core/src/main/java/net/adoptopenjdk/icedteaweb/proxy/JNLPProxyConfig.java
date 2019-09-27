@@ -70,9 +70,8 @@ public class JNLPProxyConfig {
 
     public JNLPProxyConfig(final DeploymentConfiguration config) {
         Assert.requireNonNull(config, "config");
-        //TODO: READ TYPE
-        proxyType = ProxyType.PROXY_TYPE_NONE;
-        //proxyType = Integer.valueOf(config.getProperty(ConfigurationConstants.KEY_PROXY_TYPE));
+
+        proxyType = ProxyUtils.getProxyTypeFromConfigValue(Integer.valueOf(config.getProperty(ConfigurationConstants.KEY_PROXY_TYPE)));
 
         autoConfigUrl = Optional.ofNullable(config.getProperty(ConfigurationConstants.KEY_PROXY_AUTO_CONFIG_URL))
                 .map(s -> {

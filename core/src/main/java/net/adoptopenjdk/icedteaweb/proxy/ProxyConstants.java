@@ -12,4 +12,10 @@ public interface ProxyConstants {
 
     String SOCKET_SCHEME = "socket";
 
+    String PAC_TOKEN_PROXY_PREFIX = "PROXY";
+
+    String PAC_TOKEN_SOCKS_PREFIX = "SOCKS";
+
+    String PAC_TOKEN_DIRECT_PREFIX = "DIRECT";
+
 }
