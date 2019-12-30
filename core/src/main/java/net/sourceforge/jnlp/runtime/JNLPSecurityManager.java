@@ -19,8 +19,8 @@ package net.sourceforge.jnlp.runtime;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.adoptopenjdk.icedteaweb.ui.swing.SwingUtils;
-import net.sourceforge.jnlp.runtime.classloader.CodeBaseClassLoader;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoaderUtils;
 import net.sourceforge.jnlp.security.AccessType;
 import net.sourceforge.jnlp.services.ServiceUtil;
 import net.sourceforge.jnlp.util.WeakList;
@@ -196,11 +196,11 @@ class JNLPSecurityManager extends SecurityManager {
      */
     protected ApplicationInstance getApplication(Thread thread, Class<?> stack[], int maxDepth) {
         ClassLoader cl;
-        JNLPClassLoader jnlpCl;
+        AbstractJNLPClassLoader jnlpCl;
 
         cl = thread.getContextClassLoader();
         while (cl != null) {
-            jnlpCl = getJnlpClassLoader(cl);
+            jnlpCl = JNLPClassLoaderUtils.getJnlpClassLoader(cl);
             if (jnlpCl != null && jnlpCl.getApplication() != null) {
                 return jnlpCl.getApplication();
             }
@@ -215,34 +215,13 @@ class JNLPSecurityManager extends SecurityManager {
         for (int i = 0; i < stack.length && i < maxDepth; i++) {
             cl = stack[i].getClassLoader();
             while (cl != null) {
-                jnlpCl = getJnlpClassLoader(cl);
+                jnlpCl = JNLPClassLoaderUtils.getJnlpClassLoader(cl);
                 if (jnlpCl != null && jnlpCl.getApplication() != null) {
                     return jnlpCl.getApplication();
                 }
                 cl = cl.getParent();
             }
         }
-        return null;
-    }
-
-    /**
-     * Returns the JNLPClassLoader associated with the given ClassLoader, or
-     * null.
-     * @param cl a ClassLoader
-     * @return JNLPClassLoader or null
-     */
-    private JNLPClassLoader getJnlpClassLoader(ClassLoader cl) {
-        // Since we want to deal with JNLPClassLoader, extract it if this
-        // is a codebase loader
-        if (cl instanceof CodeBaseClassLoader) {
-            cl = ((CodeBaseClassLoader) cl).getParentJNLPClassLoader();
-        }
-
-        if (cl instanceof JNLPClassLoader) {
-            JNLPClassLoader loader = (JNLPClassLoader) cl;
-            return loader;
-        }
-
         return null;
     }
 
@@ -320,9 +299,9 @@ class JNLPSecurityManager extends SecurityManager {
      * @param perm the permission to add to the JNLPClassLoader
      */
     private void addPermission(Permission perm) {
-        if (JNLPRuntime.getApplication().getClassLoader() instanceof JNLPClassLoader) {
+        if (JNLPRuntime.getApplication().getClassLoader() instanceof AbstractJNLPClassLoader) {
 
-            JNLPClassLoader cl = (JNLPClassLoader) JNLPRuntime.getApplication().getClassLoader();
+            AbstractJNLPClassLoader cl = (AbstractJNLPClassLoader) JNLPRuntime.getApplication().getClassLoader();
             cl.addPermission(perm);
             if (JNLPRuntime.isDebug()) {
                 if (cl.getSecurity() == null) {

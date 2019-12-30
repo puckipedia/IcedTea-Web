@@ -20,7 +20,7 @@ import net.adoptopenjdk.icedteaweb.IcedTeaWebConstants;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.sourceforge.jnlp.JNLPFile;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
 
 import java.applet.Applet;
 import java.awt.Container;
@@ -54,7 +54,7 @@ public class AppletInstance extends ApplicationInstance {
      * @param loader classloader for this instance
      * @param applet applet of this instance
      */
-    public AppletInstance(JNLPFile file, ThreadGroup group, JNLPClassLoader loader, Applet applet) {
+    public AppletInstance(JNLPFile file, ThreadGroup group, AbstractJNLPClassLoader loader, Applet applet) {
         super(file, group, loader);
 
         this.applet = applet;
@@ -82,7 +82,7 @@ public class AppletInstance extends ApplicationInstance {
      * @param applet applet of this instance
      * @param cont Container where to place applet
      */
-    public AppletInstance(JNLPFile file, ThreadGroup group, JNLPClassLoader loader, Applet applet, Container cont) {
+    public AppletInstance(JNLPFile file, ThreadGroup group, AbstractJNLPClassLoader loader, Applet applet, Container cont) {
         super(file, group, loader);
         this.applet = applet;
         this.environment = new AppletEnvironment(file, this, cont);

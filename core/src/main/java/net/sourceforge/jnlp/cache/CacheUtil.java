@@ -30,7 +30,7 @@ import net.adoptopenjdk.icedteaweb.resources.ResourceTracker;
 import net.adoptopenjdk.icedteaweb.resources.cache.Cache;
 import net.adoptopenjdk.icedteaweb.resources.cache.CacheFile;
 import net.adoptopenjdk.icedteaweb.resources.cache.CacheId;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 
 import javax.jnlp.DownloadServiceListener;
@@ -234,7 +234,7 @@ public class CacheUtil {
      * @param resources the resources to wait for
      * @param title     name of the download
      */
-    public static void waitForResources(final JNLPClassLoader jnlpClassLoader, final ResourceTracker tracker, final URL[] resources, final String title) {
+    public static void waitForResources(final AbstractJNLPClassLoader jnlpClassLoader, final ResourceTracker tracker, final URL[] resources, final String title) {
         final DownloadIndicator indicator = JNLPRuntime.getDefaultDownloadIndicator();
         DownloadServiceListener listener = null;
 
@@ -295,8 +295,8 @@ public class CacheUtil {
         }
     }
 
-    private static DownloadServiceListener getDownloadServiceListener(final JNLPClassLoader jnlpClassLoader, final String title, final URL[] undownloaded, final DownloadIndicator indicator) {
-        final EntryPoint entryPoint = jnlpClassLoader.getJNLPFile().getEntryPointDesc();
+    private static DownloadServiceListener getDownloadServiceListener(final AbstractJNLPClassLoader jnlpClassLoader, final String title, final URL[] undownloaded, final DownloadIndicator indicator) {
+        final EntryPoint entryPoint = jnlpClassLoader.getApplication().getJNLPFile().getEntryPointDesc();
         String progressClass = null;
 
         if (entryPoint instanceof ApplicationDesc) {

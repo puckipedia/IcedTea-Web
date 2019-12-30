@@ -22,7 +22,8 @@ import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.sourceforge.jnlp.JNLPFile;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoaderUtils;
 import net.sourceforge.jnlp.util.WeakList;
 import sun.awt.AppContext;
 
@@ -60,7 +61,7 @@ public class ApplicationInstance {
     private final ThreadGroup group;
 
     /** the classloader */
-    private final JNLPClassLoader loader;
+    private final AbstractJNLPClassLoader loader;
 
     /** whether the application has stopped running */
     private boolean stopped = false;
@@ -81,11 +82,11 @@ public class ApplicationInstance {
      * @param group thread group to which it belongs
      * @param loader loader for this application
      */
-    public ApplicationInstance(JNLPFile file, ThreadGroup group, JNLPClassLoader loader) {
+    public ApplicationInstance(JNLPFile file, ThreadGroup group, AbstractJNLPClassLoader loader) {
         this.file = file;
         this.group = group;
         this.loader = loader;
-        this.isSigned = loader.getSigning();
+        this.isSigned = loader.isFullSigned();
         AppContext.getAppContext();
     }
 
@@ -135,7 +136,7 @@ public class ApplicationInstance {
         if (!(props.length == 0)) {
             final CodeSource cs = new CodeSource(null, (java.security.cert.Certificate[]) null);
 
-            final JNLPClassLoader loader = this.loader;
+            final AbstractJNLPClassLoader loader = this.loader;
             final SecurityDesc s = loader.getSecurity();
             final ProtectionDomain pd = new ProtectionDomain(cs, s.getPermissions(cs), null, null);
             final AccessControlContext acc = new AccessControlContext(new ProtectionDomain[] { pd });
@@ -240,7 +241,7 @@ public class ApplicationInstance {
      * @return the classloader of this application, unless it is stopped
      * @throws IllegalStateException if the app is not running
      */
-    public JNLPClassLoader getClassLoader() throws IllegalStateException {
+    public AbstractJNLPClassLoader getClassLoader() throws IllegalStateException {
         if (stopped)
             throw new IllegalStateException();
 
@@ -253,7 +254,7 @@ public class ApplicationInstance {
         // When the application-desc field is empty, we should take a
         // look at the main jar for the main class.
         if (mainName == null) {
-            mainName = getClassLoader().getMainClassNameFromManifest(file.getResources().getMainJAR());
+            mainName = JNLPClassLoaderUtils.getMainClassNameFromManifest(getClassLoader().getTracker(), file.getResources().getMainJAR());
         }
 
         return mainName;

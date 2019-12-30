@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * signed JARs still results in the user having to confirm that this is
  * acceptable.
  */
-public class CodeBaseClassLoader extends URLClassLoader {
+class CodeBaseClassLoader extends URLClassLoader {
 
     JNLPClassLoader parentJNLPClassLoader;
 
@@ -101,7 +101,7 @@ public class CodeBaseClassLoader extends URLClassLoader {
      *
      * @return parent JNLPClassLoader
      */
-    public JNLPClassLoader getParentJNLPClassLoader() {
+    JNLPClassLoader getParentJNLPClassLoader() {
         return parentJNLPClassLoader;
     }
 

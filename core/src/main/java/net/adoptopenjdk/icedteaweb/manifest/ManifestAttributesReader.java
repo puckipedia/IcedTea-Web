@@ -17,13 +17,14 @@
 package net.adoptopenjdk.icedteaweb.manifest;
 
 import net.adoptopenjdk.icedteaweb.Assert;
+import net.adoptopenjdk.icedteaweb.jnlp.element.EntryPoint;
 import net.adoptopenjdk.icedteaweb.jnlp.element.resource.JARDesc;
 import net.adoptopenjdk.icedteaweb.jnlp.element.resource.ResourcesDesc;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
 import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.adoptopenjdk.icedteaweb.resources.ResourceTracker;
 import net.sourceforge.jnlp.JNLPFile;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
 import net.sourceforge.jnlp.util.ClasspathMatcher;
 import net.sourceforge.jnlp.util.JarFile;
 
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.Manifest;
 
@@ -47,13 +49,13 @@ public class ManifestAttributesReader {
     private final static Logger LOG = LoggerFactory.getLogger(ManifestAttributesReader.class);
 
     private final JNLPFile jnlpFile;
-    private JNLPClassLoader loader;
+    private AbstractJNLPClassLoader loader;
 
     public ManifestAttributesReader(final JNLPFile jnlpFile) {
         this.jnlpFile = jnlpFile;
     }
 
-    public void setLoader(JNLPClassLoader loader) {
+    public void setLoader(AbstractJNLPClassLoader loader) {
         this.loader = loader;
     }
 
@@ -64,23 +66,33 @@ public class ManifestAttributesReader {
     /**
      * main class can be defined outside of manifest.
      * This method is mostly for completeness
+     *
      * @return main-class as it is specified in application
      */
-    public String getMainClass(){
-        if (loader == null) {
-            LOG.debug("Jars not ready to provide main class");
-            return null;
+    public String getMainClass() {
+        final EntryPoint entryPoint = jnlpFile.getEntryPointDesc();
+        if(entryPoint != null) {
+            final String mainClass = entryPoint.getMainClass();
+            if (mainClass != null) {
+                return mainClass;
+            }
         }
-        return loader.getMainClass();
+        try {
+            final List<JARDesc> jars = jnlpFile.getJnlpResources().getJARs();
+            final ResourceTracker tracker = loader.getTracker();
+            return ManifestAttributesReader.getAttributeFromJars(Attributes.Name.MAIN_CLASS, jars, tracker);
+        } catch (final Exception e) {
+            LOG.error("Error while trying to extract main class from jnlp file");
+        }
+        return null;
     }
 
     /**
      * The raw string representation (fully qualified class names separated by a space) of the
      * Entry-Point manifest attribute value that can be used as entry point for the RIA.
      *
-     * @see #getEntryPoints() for a tokenized representation of the entry points
-     *
      * @return the Entry-Point manifest attribute value
+     * @see #getEntryPoints() for a tokenized representation of the entry points
      */
     public String getEntryPoint() {
         return getAttribute(ManifestAttributes.ENTRY_POINT.toString());
@@ -198,7 +210,7 @@ public class ManifestAttributesReader {
      * Returns the value of the specified manifest attribute name.
      *
      * @param name name of the manifest attribute to find in application
-     * @return  plain attribute value
+     * @return plain attribute value
      */
     public String getAttribute(final Name name) {
         if (loader == null) {
@@ -216,7 +228,7 @@ public class ManifestAttributesReader {
             value = value.toLowerCase().trim();
             switch (value) {
                 case "true":
-                    return  ManifestBoolean.TRUE;
+                    return ManifestBoolean.TRUE;
                 case "false":
                     return ManifestBoolean.FALSE;
                 default:
@@ -230,8 +242,8 @@ public class ManifestAttributesReader {
      * are consulted in the following order: "main" jar in the given list, first jar in the given list,
      * all jars in the given list.
      *
-     * @param name attribute to be found
-     * @param jars Jars that are checked to see if they contain the main class
+     * @param name    attribute to be found
+     * @param jars    Jars that are checked to see if they contain the main class
      * @param tracker tracker to use for the jar file lookup
      * @return the attribute value, null if no attribute could be found for some reason
      */
@@ -277,10 +289,9 @@ public class ManifestAttributesReader {
      * Returns the value of the specified manifest attribute name, or null if the JAR referenced by the given location URL
      * does not contain a manifest or the attribute could not not be found in the manifest.
      *
-     * @param name name of the attribute to find
+     * @param name     name of the attribute to find
      * @param location The JAR location
-     * @param tracker resource tracker to use for the jar file lookup
-     *
+     * @param tracker  resource tracker to use for the jar file lookup
      * @return the attribute value, null if no attribute could be found for some reason
      */
     public static String getAttributeFromJar(final Name name, final URL location, final ResourceTracker tracker) {
@@ -320,7 +331,7 @@ public class ManifestAttributesReader {
      * Returns a set of paths that indicate the Class-Path entries in the manifest file.
      * The paths are rooted in the same directory as the originalJarPath.
      *
-     * @param manifest the manifest
+     * @param manifest                the manifest
      * @param originalJarPathLocation the remote/original path of the jar containing the manifest
      * @return a Set of String where each string is a path to the jar on the original jar's classpath.
      */

@@ -63,7 +63,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.SocketPermission;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -110,7 +109,7 @@ import static sun.security.util.SecurityConstants.FILE_READ_ACTION;
  * (JAM)</a> - initial author
  * @version $Revision: 1.20 $
  */
-public class JNLPClassLoader extends URLClassLoader {
+public class JNLPClassLoader extends AbstractJNLPClassLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(JNLPClassLoader.class);
 
@@ -425,7 +424,7 @@ public class JNLPClassLoader extends URLClassLoader {
         JNLPClassLoader extLoader = uniqueKeyToLoader.get(uniqueKey);
 
         if (extLoader != null && extLoader != loader) {
-            if (loader.getSigning() != extLoader.getSigning()) {
+            if (loader.isFullSigned() != extLoader.isFullSigned()) {
                 loader.securityDelegate.promptUserOnPartialSigning();
             }
             loader.merge(extLoader);
@@ -498,6 +497,10 @@ public class JNLPClassLoader extends URLClassLoader {
         }
 
         return loader;
+    }
+
+    private JNLPFile getJNLPFile() {
+        return file;
     }
 
     /**
@@ -639,7 +642,7 @@ public class JNLPClassLoader extends URLClassLoader {
 
             if (loaders.length > 1) {
                 LOG.debug("Checking extensions of jnlp file '{}'", file.getSourceLocation());
-                final boolean containsUnsigned = Stream.of(loaders).anyMatch(l -> !l.getSigning());
+                final boolean containsUnsigned = Stream.of(loaders).anyMatch(l -> !l.isFullSigned());
                 if (containsUnsigned) {
                     LOG.debug("At least one extension for jnlp file '{}' contains unsigned content", file.getSourceLocation());
                     //TODO: is NONE really right? We do not kn ow if it is NONE or PARTIAL....
@@ -1030,13 +1033,6 @@ public class JNLPClassLoader extends URLClassLoader {
      */
     public ApplicationInstance getApplication() {
         return app;
-    }
-
-    /**
-     * @return the JNLP file the classloader was created from.
-     */
-    public JNLPFile getJNLPFile() {
-        return file;
     }
 
     /**
@@ -1775,7 +1771,7 @@ public class JNLPClassLoader extends URLClassLoader {
         return new ArrayList<>(result);
     }
 
-    public boolean getSigning() {
+    public boolean isFullSigned() {
         return signing == SigningState.FULL;
     }
 
@@ -1958,8 +1954,8 @@ public class JNLPClassLoader extends URLClassLoader {
      * @param part    The name of the path.
      * @param version of jar to be downloaded
      */
-    void initializeNewJarDownload(final URL ref, final String part, final VersionString version) {
-        final JARDesc[] jars = ManageJnlpResources.findJars(this, ref, part, version);
+    public void initializeNewJarDownload(final URL ref, final String part, final VersionString version) {
+        final JARDesc[] jars = JNLPClassLoaderUtils.findJars(this, ref, part, version);
 
         for (JARDesc eachJar : jars) {
             LOG.info("Downloading and initializing jar: {}", eachJar.getLocation().toString());
@@ -1977,9 +1973,9 @@ public class JNLPClassLoader extends URLClassLoader {
      *                DOWNLOADTOCACHE, REMOVEFROMCACHE, or CHECKCACHE.
      * @return true if CHECKCACHE and the resource is cached.
      */
-    boolean manageExternalJars(final URL ref, final String version, final DownloadAction action) {
+    protected boolean manageExternalJars(final URL ref, final String version, final DownloadAction action) {
         boolean approved = false;
-        JNLPClassLoader foundLoader = LocateJnlpClassLoader.getLoaderByResourceUrl(this, ref, version);
+        JNLPClassLoader foundLoader = JNLPClassLoaderUtils.getLoaderByResourceUrl(this, ref, version);
         final VersionString resourceVersion = (version == null) ? null : VersionString.fromString(version);
 
         if (foundLoader != null) {
@@ -2093,21 +2089,26 @@ public class JNLPClassLoader extends URLClassLoader {
         return new AccessControlContext(new ProtectionDomain[]{pd});
     }
 
-    public String getMainClass() {
-        return mainClass;
-    }
-
-
     public ResourceTracker getTracker() {
         return tracker;
     }
 
-    public String getMainClassNameFromManifest(JARDesc mainJarDesc) throws IOException {
-        final File f = tracker.getCacheFile(mainJarDesc.getLocation());
-        if (f != null) {
-            final JarFile mainJar = new JarFile(f);
-            return mainJar.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-        }
-        return null;
+    public void removeExtensionPart(final URL ref, final String version, final String part) {
+        final VersionString resourceVersion = (version == null) ? null : VersionString.fromString(version);
+        final JARDesc[] jars = JNLPClassLoaderUtils.findJars(this, ref, part, resourceVersion);
+        removeCachedJars(ref, jars);
     }
+
+    public void removePart(final String part) {
+        final JARDesc[] jars = JNLPClassLoaderUtils.findJars(this, null, part, null);
+        removeCachedJars(null, jars);
+    }
+
+    private void removeCachedJars(final URL ref, final JARDesc[] jars) {
+        AbstractJNLPClassLoader foundLoader = JNLPClassLoaderUtils.getLoaderByJnlpFile(this, ref);
+
+        if (foundLoader != null)
+            foundLoader.removeJars(jars);
+    }
+
 }

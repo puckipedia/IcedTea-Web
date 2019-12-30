@@ -42,40 +42,40 @@ public class SecurityDelegateImpl implements SecurityDelegate {
     @Override
     public SecurityDesc getCodebaseSecurityDesc(final JARDesc jarDesc, final URL codebaseHost) {
         if (runInSandbox) {
-            return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+            return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                     SecurityDesc.SANDBOX_PERMISSIONS,
                     codebaseHost);
         } else if (isPluginApplet()) {
             try {
                 if (JarCertVerifier.isJarSigned(jarDesc, new PluginAppVerifier(), classLoader.getTracker())) {
-                    return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+                    return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                             SecurityDesc.ALL_PERMISSIONS,
                             codebaseHost);
                 } else {
-                    return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+                    return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                             SecurityDesc.SANDBOX_PERMISSIONS,
                             codebaseHost);
                 }
             } catch (final Exception e) {
                 LOG.error(IcedTeaWebConstants.DEFAULT_ERROR_MESSAGE, e);
-                return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+                return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                         SecurityDesc.SANDBOX_PERMISSIONS,
                         codebaseHost);
             }
         } else {
-            return classLoader.getJNLPFile().getSecurity();
+            return classLoader.getApplication().getJNLPFile().getSecurity();
         }
     }
 
     @Override
     public SecurityDesc getClassLoaderSecurity(final URL codebaseHost) throws LaunchException {
         if (isPluginApplet()) {
-            if (!runInSandbox && classLoader.getSigning()) {
-                return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+            if (!runInSandbox && classLoader.isFullSigned()) {
+                return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                         SecurityDesc.ALL_PERMISSIONS,
                         codebaseHost);
             } else {
-                return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+                return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                         SecurityDesc.SANDBOX_PERMISSIONS,
                         codebaseHost);
             }
@@ -92,14 +92,14 @@ public class SecurityDelegateImpl implements SecurityDelegate {
              * Unsigned      no <security>     Sandbox
              *
              */
-            if (!runInSandbox && !classLoader.getSigning()
-                    && !classLoader.getJNLPFile().getSecurity().getSecurityType().equals(SecurityDesc.SANDBOX_PERMISSIONS)) {
+            if (!runInSandbox && !classLoader.isFullSigned()
+                    && !classLoader.getApplication().getJNLPFile().getSecurity().getSecurityType().equals(SecurityDesc.SANDBOX_PERMISSIONS)) {
                 if (classLoader.jcv.allJarsSigned()) {
-                    LaunchException ex = new LaunchException(classLoader.getJNLPFile(), null, FATAL, "Application Error", "The JNLP application is not fully signed by a single cert.", "The JNLP application has its components individually signed, however there must be a common signer to all entries.");
+                    LaunchException ex = new LaunchException(classLoader.getApplication().getJNLPFile(), null, FATAL, "Application Error", "The JNLP application is not fully signed by a single cert.", "The JNLP application has its components individually signed, however there must be a common signer to all entries.");
                     JNLPClassLoader.consultCertificateSecurityException(ex);
                     return consultResult(codebaseHost);
                 } else {
-                    LaunchException ex = new LaunchException(classLoader.getJNLPFile(), null, FATAL, "Application Error", "Cannot grant permissions to unsigned jars.", "Application requested security permissions, but jars are not signed.");
+                    LaunchException ex = new LaunchException(classLoader.getApplication().getJNLPFile(), null, FATAL, "Application Error", "Cannot grant permissions to unsigned jars.", "Application requested security permissions, but jars are not signed.");
                     JNLPClassLoader.consultCertificateSecurityException(ex);
                     return consultResult(codebaseHost);
                 }
@@ -107,10 +107,10 @@ public class SecurityDelegateImpl implements SecurityDelegate {
     }
 
     private SecurityDesc consultResult(URL codebaseHost) {
-        if (!runInSandbox && classLoader.getSigning()) {
-            return classLoader.getJNLPFile().getSecurity();
+        if (!runInSandbox && classLoader.isFullSigned()) {
+            return classLoader.getApplication().getJNLPFile().getSecurity();
         } else {
-            return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+            return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                     SecurityDesc.SANDBOX_PERMISSIONS,
                     codebaseHost);
         }
@@ -120,11 +120,11 @@ public class SecurityDelegateImpl implements SecurityDelegate {
     public SecurityDesc getJarPermissions(final URL codebaseHost) {
         if (!runInSandbox && classLoader.jcv.isFullySigned()) {
             // Already trust application, nested jar should be given
-            return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+            return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                     SecurityDesc.ALL_PERMISSIONS,
                     codebaseHost);
         } else {
-            return new SecurityDesc(classLoader.getJNLPFile(), AppletPermissionLevel.NONE,
+            return new SecurityDesc(classLoader.getApplication().getJNLPFile(), AppletPermissionLevel.NONE,
                     SecurityDesc.SANDBOX_PERMISSIONS,
                     codebaseHost);
         }
@@ -134,7 +134,7 @@ public class SecurityDelegateImpl implements SecurityDelegate {
     public void setRunInSandbox() throws LaunchException {
         if (runInSandbox && classLoader.getSecurity() != null
                 && !classLoader.jarLocationSecurityMap.isEmpty()) {
-            throw new LaunchException(classLoader.getJNLPFile(), null, FATAL, "Initialization Error", "Run in Sandbox call performed too late.", "The classloader was notified to run the applet sandboxed, but security settings were already initialized.");
+            throw new LaunchException(classLoader.getApplication().getJNLPFile(), null, FATAL, "Initialization Error", "Run in Sandbox call performed too late.", "The classloader was notified to run the applet sandboxed, but security settings were already initialized.");
         }
 
         JNLPRuntime.reloadPolicy();
@@ -149,7 +149,7 @@ public class SecurityDelegateImpl implements SecurityDelegate {
             return;
         }
         promptedForPartialSigning = true;
-        UnsignedAppletTrustConfirmation.checkPartiallySignedWithUserIfRequired(this, classLoader.getJNLPFile(), classLoader.jcv);
+        UnsignedAppletTrustConfirmation.checkPartiallySignedWithUserIfRequired(this, classLoader.getApplication().getJNLPFile(), classLoader.jcv);
     }
 
     @Override

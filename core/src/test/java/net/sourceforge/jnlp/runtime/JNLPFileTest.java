@@ -47,6 +47,7 @@ import net.adoptopenjdk.icedteaweb.resources.UpdatePolicy;
 import net.adoptopenjdk.icedteaweb.testing.mock.DummyJNLPFileWithJar;
 import net.adoptopenjdk.icedteaweb.testing.util.FileTestUtils;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
 import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
 import net.sourceforge.jnlp.util.logging.NoStdOutErrTest;
 import org.junit.AfterClass;
@@ -97,7 +98,7 @@ public class JNLPFileTest extends NoStdOutErrTest {
         FileTestUtils.createJarWithContents(jarLocation77, manifest77);
 
         final DummyJNLPFileWithJar jnlpFile = new DummyJNLPFileWithJar(0, jarLocation66, jarLocation77); //jar 6 should be main
-        final JNLPClassLoader classLoader = new JNLPClassLoader(jnlpFile, UpdatePolicy.ALWAYS);//jnlp file got its instance in classloaders constructor
+        final AbstractJNLPClassLoader classLoader = new JNLPClassLoader(jnlpFile, UpdatePolicy.ALWAYS);//jnlp file got its instance in classloaders constructor
         //jnlpFile.getManifestsAttributes().setLoader(classLoader); //classloader set, but no att specified
 
         Assert.assertNull("classloader attached, but should be null", jnlpFile.getManifestAttributesReader().getApplicationName());
@@ -177,7 +178,7 @@ public class JNLPFileTest extends NoStdOutErrTest {
         Assert.assertEquals("no classloader attached, should be null", ManifestBoolean.UNDEFINED, jnlpFile.getManifestAttributesReader().isTrustedLibrary());
         Assert.assertEquals("no classloader attached, should be null", ManifestBoolean.UNDEFINED, jnlpFile.getManifestAttributesReader().isTrustedOnly());
 
-        final JNLPClassLoader classLoader = new JNLPClassLoader(jnlpFile, UpdatePolicy.ALWAYS); //jnlp file got its instance in classloaders constructor
+        final AbstractJNLPClassLoader classLoader = new JNLPClassLoader(jnlpFile, UpdatePolicy.ALWAYS); //jnlp file got its instance in classloaders constructor
         //jnlpFile.getManifestsAttributes().setLoader(classLoader);
 
         Exception ex = null;

@@ -23,7 +23,7 @@ import net.adoptopenjdk.icedteaweb.logging.LoggerFactory;
 import net.sourceforge.jnlp.config.ConfigurationConstants;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.config.PathsAndFiles;
-import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
+import net.sourceforge.jnlp.runtime.classloader.AbstractJNLPClassLoader;
 
 import java.io.File;
 import java.net.URI;
@@ -112,8 +112,8 @@ public class JNLPPolicy extends Policy {
         // if we check the SecurityDesc here then keep in mind that
         // code can add properties at runtime to the ResourcesDesc!
         if (JNLPRuntime.getApplication() != null) {
-            if (JNLPRuntime.getApplication().getClassLoader() instanceof JNLPClassLoader) {
-                JNLPClassLoader cl = (JNLPClassLoader) JNLPRuntime.getApplication().getClassLoader();
+            if (JNLPRuntime.getApplication().getClassLoader() instanceof AbstractJNLPClassLoader) {
+                AbstractJNLPClassLoader cl = JNLPRuntime.getApplication().getClassLoader();
 
                 PermissionCollection clPermissions = cl.getPermissions(source);
 
