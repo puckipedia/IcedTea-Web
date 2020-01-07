@@ -59,10 +59,6 @@ public class JarExtractor {
     private void addJnlpFile(final JNLPFile jnlpFile, boolean isExtension) {
         final JNLPResources resources = jnlpFile.getJnlpResources();
 
-        final List<Future<Void>> extensionTasks = resources.getExtensions().stream()
-                .map(extension -> addExtension(jnlpFile, extension))
-                .collect(toList());
-
         final List<Future<Void>> packageTasks = resources.getPackages().stream()
                 .map(packageDesc -> addPackage(jnlpFile, packageDesc, isExtension))
                 .collect(toList());
@@ -71,18 +67,22 @@ public class JarExtractor {
                 .map(jarDesc -> addJar(jnlpFile, jarDesc, isExtension))
                 .collect(toList());
 
-        extensionTasks.forEach(f -> waitForCompletion(f, "Error while loading extensions!"));
+        final List<Future<Void>> extensionTasks = resources.getExtensions().stream()
+                .map(extension -> addExtension(jnlpFile, isExtension, extension))
+                .collect(toList());
+
         packageTasks.forEach(f -> waitForCompletion(f, "Error while processing packages!"));
         jarTasks.forEach(f -> waitForCompletion(f, "Error while processing jars!"));
+        extensionTasks.forEach(f -> waitForCompletion(f, "Error while loading extensions!"));
     }
 
-    private Future<Void> addExtension(final JNLPFile parent, final ExtensionDesc extension) {
+    private Future<Void> addExtension(final JNLPFile parent, final boolean parentIsAlreadyExtension, final ExtensionDesc extension) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         BACKGROUND_EXECUTOR.execute(() -> {
             try {
                 final JNLPFile jnlpFile = jnlpFileFactory.create(extension.getLocation(), extension.getVersion(), parent.getParserSettings(), JNLPRuntime.getDefaultUpdatePolicy());
-                addExtensionParts(parent, jnlpFile, extension.getDownloads());
                 addJnlpFile(jnlpFile, true);
+                addExtensionParts(parent, parentIsAlreadyExtension, jnlpFile, extension.getDownloads());
                 result.complete(null);
             } catch (Exception e) {
                 result.completeExceptionally(e);
@@ -91,18 +91,18 @@ public class JarExtractor {
         return result;
     }
 
-    private void addExtensionParts(final JNLPFile parentFile, final JNLPFile extensionFile, final List<ExtensionDownloadDesc> downloads) throws ParseException {
+    private void addExtensionParts(final JNLPFile jnlpFile, final boolean jnlpFileIsAlreadyExtension, final JNLPFile extensionFile, final List<ExtensionDownloadDesc> downloads) throws ParseException {
         partsLock.lock();
         try {
             for (ExtensionDownloadDesc download : downloads) {
-                final String extPartName = download.getExtPart();
-                final String partName = download.getPart();
 
+                final Part rootPart =  getOrCreatePart(jnlpFile, download.getPart(), jnlpFileIsAlreadyExtension);
+                final Part extensionPart = getOrCreatePart(extensionFile, download.getExtPart(), true);
 
-                final Part part = isBlank(partName) ? getOrCreatePart(parentFile, extPartName, true) : getOrCreatePart(extensionFile, partName, true);
+                rootPart.addExtPart(extensionPart);
 
-                if (!download.isLazy()) {
-                    part.markAsEager();
+                if (!rootPart.isLazy()) {
+                    extensionPart.markAsEager();
                 }
             }
         } finally {

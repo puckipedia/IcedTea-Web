@@ -136,4 +136,54 @@ public class ExtensionSupportClassloaderTests {
         Assertions.assertTrue(jarProvider.hasTriedToDownload(JAR_2));
     }
 
+
+
+    @Test
+    @RepeatedTest(10)
+    public void testExtDownloadWithoutPart() throws Exception {
+        //given
+        final DummyJarProvider jarProvider = new DummyJarProvider();
+        final List<Part> parts = createPartsFor("integration-app-25.jnlp");
+
+        //when
+        new JnlpApplicationClassLoader(parts, jarProvider);
+
+        //than
+        Assertions.assertEquals(1, jarProvider.getDownloaded().size());
+        Assertions.assertTrue(jarProvider.hasTriedToDownload(JAR_1));
+    }
+
+    @Test
+    @RepeatedTest(10)
+    public void testExtDownloadWithPart() throws Exception {
+        //given
+        final DummyJarProvider jarProvider = new DummyJarProvider();
+        final List<Part> parts = createPartsFor("integration-app-26.jnlp");
+
+        //when
+        new JnlpApplicationClassLoader(parts, jarProvider);
+
+        //than
+        Assertions.assertEquals(0, jarProvider.getDownloaded().size());
+    }
+
+    @Test
+    @RepeatedTest(10)
+    public void testExtDownloadWithPart2() throws Exception {
+        //given
+        final DummyJarProvider jarProvider = new DummyJarProvider();
+        final List<Part> parts = createPartsFor("integration-app-26.jnlp");
+        final JnlpApplicationClassLoader classLoader = new JnlpApplicationClassLoader(parts, jarProvider);
+
+        //when
+        final Class<?> loadedClass = classLoader.loadClass(CLASS_A);
+
+        //than
+        Assertions.assertEquals(1, jarProvider.getDownloaded().size());
+        Assertions.assertTrue(jarProvider.hasTriedToDownload(JAR_1));
+    }
+
+
+
+
 }

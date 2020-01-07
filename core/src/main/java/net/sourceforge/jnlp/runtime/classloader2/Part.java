@@ -15,6 +15,7 @@ import java.util.StringJoiner;
 public class Part {
 
     private final String name;
+
     private boolean lazy = true;
 
     private final Extension extension;
@@ -22,7 +23,10 @@ public class Part {
     private boolean downloaded;
 
     private final List<JARDesc> jars = new ArrayList<>();
+
     private final List<PackageDesc> packages = new ArrayList<>();
+
+    private final List<Part> extParts = new ArrayList<>();
 
     Part(final String name) {
         this(null, name);
@@ -31,6 +35,10 @@ public class Part {
     Part(final Extension extension, final String name) {
         this.extension = extension;
         this.name = name;
+    }
+
+    public void addExtPart(final Part extPart) {
+        extParts.add(extPart);
     }
 
     void addJar(final JARDesc jarDescription) {
@@ -50,7 +58,9 @@ public class Part {
     }
 
     public List<JARDesc> getJars() {
-        return Collections.unmodifiableList(jars);
+        final List<JARDesc> result = new ArrayList<>(jars);
+        extParts.forEach(p -> result.addAll(p.getJars()));
+        return Collections.unmodifiableList(result);
     }
 
     public List<PackageDesc> getPackages() {
@@ -75,6 +85,7 @@ public class Part {
 
     public void setDownloaded(final boolean downloaded) {
         this.downloaded = downloaded;
+        extParts.forEach(p -> p.setDownloaded(downloaded));
     }
 
     public Extension getExtension() {

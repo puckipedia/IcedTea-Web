@@ -42,6 +42,7 @@ public class JnlpApplicationClassLoader extends URLClassLoader {
 
         parts.stream()
                 .filter(part -> !part.isLazy())
+                .filter(part -> !part.isDownloaded())
                 .forEach(this::downloadAndAddPart);
     }
 
