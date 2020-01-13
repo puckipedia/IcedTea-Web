@@ -16,6 +16,7 @@
 
 package net.sourceforge.jnlp.runtime;
 
+import net.adoptopenjdk.icedteaweb.classloader.ClassLoaderUtils;
 import net.adoptopenjdk.icedteaweb.jnlp.element.resource.PropertyDesc;
 import net.adoptopenjdk.icedteaweb.jnlp.element.security.SecurityDesc;
 import net.adoptopenjdk.icedteaweb.logging.Logger;
@@ -24,21 +25,17 @@ import net.sourceforge.jnlp.JNLPFile;
 import net.sourceforge.jnlp.LaunchException;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.classloader.JNLPClassLoader;
-import net.sourceforge.jnlp.util.JarFile;
 import net.sourceforge.jnlp.util.WeakList;
 import sun.awt.AppContext;
 
 import javax.swing.event.EventListenerList;
 import java.awt.Window;
-import java.io.File;
-import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.jar.Attributes;
 
 /**
  * Represents a running instance of an application described in a
@@ -79,6 +76,8 @@ public class ApplicationInstance {
     /** whether or not this application is signed */
     private boolean isSigned;
 
+    private final String mainClass;
+
     /**
      * Create an application instance for the file. This should be done in the
      * appropriate {@link ThreadGroup} only.
@@ -88,6 +87,11 @@ public class ApplicationInstance {
         this.file = file;
         this.group = Thread.currentThread().getThreadGroup();
         this.loader = JNLPClassLoader.getInstance(file, JNLPRuntime.getDefaultUpdatePolicy(), enableCodeBase);
+
+        // Gib mir MainClass
+        mainClass = ClassLoaderUtils.getMainClass(file, loader);
+
+
         if(enableCodeBase) {
             this.loader.enableCodeBase();
         }
@@ -102,6 +106,16 @@ public class ApplicationInstance {
             Policy.setPolicy(policy);
             System.setSecurityManager(security);
         }
+
+        try {
+            loader.loadClass(mainClass);
+        } catch (final ClassNotFoundException e) {
+            throw new LaunchException("Can not load main class '" + mainClass + "' !", e);
+        }
+    }
+
+    public String getMainClass() {
+        return mainClass;
     }
 
     /**
@@ -243,7 +257,7 @@ public class ApplicationInstance {
      */
     public ThreadGroup getThreadGroup() throws IllegalStateException {
         if (stopped)
-            throw new IllegalStateException();
+            throw new IllegalStateException("Application already stopped!");
 
         return group;
     }
@@ -256,28 +270,9 @@ public class ApplicationInstance {
      */
     public ClassLoader getClassLoader() throws IllegalStateException {
         if (stopped)
-            throw new IllegalStateException();
+            throw new IllegalStateException("Application already stopped!");
 
         return loader;
-    }
-
-    public String getMainClassName() throws IOException {
-        final String mainName = file.getApplication().getMainClass();
-
-        // When the application-desc field is empty, we should take a
-        // look at the main jar for the main class.
-        if (mainName != null) {
-            return mainName;
-        }
-
-        final File f = loader.getTracker().getCacheFile(file.getResources().getMainJAR().getLocation());
-        if (f != null) {
-            try (final JarFile mainJar = new JarFile(f)) {
-                return mainJar.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-            }
-        }
-
-        return null;
     }
 
     /**

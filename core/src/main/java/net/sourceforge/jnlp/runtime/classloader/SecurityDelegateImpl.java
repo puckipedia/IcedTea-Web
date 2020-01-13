@@ -37,7 +37,7 @@ public class SecurityDelegateImpl implements SecurityDelegate {
         runInSandbox = false;
     }
 
-    static void consultCertificateSecurityException(LaunchException ex) throws LaunchException {
+    public static void consultCertificateSecurityException(LaunchException ex) throws LaunchException {
         if (isCertUnderestimated()) {
             LOG.error("{} and {} are declared. Ignoring certificate issue", CommandLineOptions.NOSEC.getOption(), ConfigurationConstants.KEY_SECURITY_ITW_IGNORECERTISSUES);
         } else {

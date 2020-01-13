@@ -370,7 +370,7 @@ public class Launcher {
             final ApplicationInstance app = createApplication(file);
             app.initialize();
 
-            final String mainName = app.getMainClassName();
+            final String mainName = app.getMainClass();
 
             if (mainName == null) {
                 throw launchError(new LaunchException(file, null,

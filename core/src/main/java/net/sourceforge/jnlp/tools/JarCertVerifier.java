@@ -35,6 +35,7 @@ import net.sourceforge.jnlp.runtime.classloader.SecurityDelegate;
 import net.sourceforge.jnlp.security.AppVerifier;
 import net.sourceforge.jnlp.security.CertVerifier;
 import net.sourceforge.jnlp.security.CertificateUtils;
+import net.sourceforge.jnlp.security.JNLPAppVerifier;
 import net.sourceforge.jnlp.security.KeyStores;
 import net.sourceforge.jnlp.util.JarFile;
 import sun.security.util.DerInputStream;
@@ -116,8 +117,12 @@ public class JarCertVerifier implements CertVerifier {
      *
      * @param verifier The application verifier to be used by the new instance.
      */
-    public JarCertVerifier(AppVerifier verifier) {
+    private JarCertVerifier(AppVerifier verifier) {
         appVerifier = verifier;
+    }
+
+    public JarCertVerifier() {
+        this(new JNLPAppVerifier());
     }
 
     /**
@@ -194,11 +199,6 @@ public class JarCertVerifier implements CertVerifier {
         return fullySigned;
     }
 
-    public static boolean isJarSigned(final JARDesc jar, final AppVerifier verifier, final ResourceTracker tracker) throws Exception {
-        final JarCertVerifier certVerifier = new JarCertVerifier(verifier);
-        certVerifier.add(jar, tracker);
-        return certVerifier.allJarsSigned();
-    }
 
     /**
      * Update the verifier to consider a new jar when verifying.
