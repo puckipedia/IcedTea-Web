@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
@@ -696,11 +698,23 @@ public class CacheUtil {
             path.append(location.getPort());
             path.append(File.separatorChar);
         }
-        String locationPath = location.getPath();
+
+        String locationPath;
         String query = "";
-        if (location.getQuery() != null) {
-            query = location.getQuery();
+
+        try {
+            URI locationUri = location.toURI();
+            locationPath = locationUri.getPath();
+            if (locationUri.getQuery() != null) {
+                query = locationUri.getQuery();
+            }
+        } catch (URISyntaxException use) {
+            locationPath = location.getPath()
+            if (location.getQuery() != null) {
+                query = location.getQuery();
+            }
         }
+
         if (locationPath.contains("..") || query.contains("..")){
             try {
                 /**
@@ -717,8 +731,8 @@ public class CacheUtil {
             }
         } else {
             path.append(locationPath.replace('/', File.separatorChar));
-            if (location.getQuery() != null && !location.getQuery().trim().isEmpty()) {
-                path.append(".").append(location.getQuery());
+            if (!query.trim().isEmpty()) {
+                path.append(".").append(query);
             }
 
             File candidate = new File(FileUtils.sanitizePath(path.toString()));
